@@ -1,0 +1,6 @@
+﻿  main.cpp
+m:\sfmltest2\sfmlgame\sfmlgame\main.cpp(54): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+m:\sfmltest2\sfmlgame\sfmlgame\main.cpp(61): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+m:\sfmltest2\sfmlgame\sfmlgame\main.cpp(161): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+m:\sfmltest2\sfmlgame\sfmlgame\main.cpp(162): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  SFMLGAME.vcxproj -> M:\SFMLTEST2\SFMLGAME\Debug\SFMLGAME.exe
