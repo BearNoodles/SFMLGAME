@@ -216,7 +216,7 @@ int main()
 
 		messageTime = messageClock.getElapsedTime();
 
-		if (messageTime.asSeconds() > 0.5f)
+		if (messageTime.asSeconds() > 0.1f)
 		{
 			messageClock.restart();
 			msgReady = true;
@@ -286,7 +286,6 @@ int main()
 
 				messages.push_back(msg);
 
-				msgReady = false;
 			}
 			else
 			{
@@ -317,7 +316,6 @@ int main()
 
 				messages.push_back(msg);
 
-				msgReady = false;
 			}
 			else
 			{
@@ -423,8 +421,8 @@ int main()
 		}
 
 		myPlayer.UpdateSelf(currentTime, frameTime);
-		opponent.UpdateOther(currentTime, frameTime);
-
+		opponent.UpdateOther(currentTime, frameTime, msgReady);
+		
 		for (auto player : playerList)
 		{
 			if (player.GetID() == myID)
@@ -433,8 +431,12 @@ int main()
 			}
 			else
 			{
-				player.UpdateOther(currentTime, frameTime);
+				player.UpdateOther(currentTime, frameTime, msgReady);
 			}
+		}
+		if (msgReady)
+		{
+			msgReady = false;
 		}
 
 		OutOfBounds();

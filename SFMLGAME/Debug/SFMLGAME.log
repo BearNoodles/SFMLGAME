@@ -1,17 +1,7 @@
-﻿  main.cpp
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(128): warning C4244: 'argument': conversion from '::size_t' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(135): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(141): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(147): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(205): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(359): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(228): warning C4101: 'msg': unreferenced local variable
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(248): warning C4101: 'msg': unreferenced local variable
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(488): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(551): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(557): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(559): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(604): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(613): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\main.cpp(737): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+﻿  Player.cpp
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(25): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(34): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(232): warning C4018: '>=': signed/unsigned mismatch
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(241): warning C4018: '<': signed/unsigned mismatch
   SFMLGAME.vcxproj -> M:\SFMLTEST\SFMLGAME\Debug\SFMLGAME.exe

@@ -17,7 +17,7 @@ public:
 	void Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, int ID);
 
 	void UpdateSelf(sf::Time time, sf::Time frameTime);
-	void UpdateOther(sf::Time time, sf::Time frameTime);
+	void UpdateOther(sf::Time time, sf::Time frameTime, bool newmsg);
 
 	int GetID();
 	void SetID(int id);
