@@ -157,7 +157,7 @@ int main()
 	sf::Clock messageClock; // starts the clock
 
 
-	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!", sf::Style::Resize);
+	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!");
 	window.setKeyRepeatEnabled(false);
 	window.setFramerateLimit(FPS);
 	//window.setPosition(sf::Vector2i(500, 50));
@@ -243,7 +243,7 @@ int main()
 			}
 			counter++;
 		}
-		else 
+		else if(msgReady == true)
 		{
 			Message msg;
 			sf::Int8 id = myID;
@@ -267,7 +267,7 @@ int main()
 			sf::Int8 id;
 			float x;
 			float y;
-			float time;
+			float timeSent;
 			sf::Packet packet;
 			if (socket.receive(packet, clientIP, clientPort) == sf::Socket::NotReady)
 			{
@@ -275,23 +275,30 @@ int main()
 				//recieve failed send hello again
 				//std::cout << "no messages yet" << std::endl;
 			}
-			packet >> id >> x >> y >> time;
-			Message msg;
-			msg.id = id;
-			msg.x = x;
-			msg.y = y;
-			msg.timeSent = time;
+			if (packet >> id >> x >> y >> timeSent)
+			{
+				//good
+				Message msg;
+				msg.id = id;
+				msg.x = x;
+				msg.y = y;
+				msg.timeSent = timeSent;
 
-			messages.push_back({ id, x, y, time });
+				messages.push_back(msg);
 
-			msgReady = false;
+				msgReady = false;
+			}
+			else
+			{
+				std::cout << "Couldnt receive message" << std::endl;
+			}
 		}
-		else
+		else if (msgReady == true)
 		{
 			sf::Int8 id;
 			float x;
 			float y;
-			float time;
+			float timeSent;
 			sf::Packet packet;
 			if (socket.receive(packet, hostIP, hostPort) == sf::Socket::NotReady)
 			{
@@ -299,16 +306,24 @@ int main()
 				//recieve failed send hello again
 				//std::cout << "no messages yet" << std::endl;
 			}
-			packet >> id >> x >> y >> time;
-			Message msg;
-			msg.id = id;
-			msg.x = x;
-			msg.y = y;
-			msg.y = y;
+			if (packet >> id >> x >> y >> timeSent)
+			{
+				//good
+				Message msg;
+				msg.id = id;
+				msg.x = x;
+				msg.y = y;
+				msg.timeSent = timeSent;
 
-			messages.push_back({ id, x, y, time });
+				messages.push_back(msg);
 
-			msgReady = false;
+				msgReady = false;
+			}
+			else
+			{
+				std::cout << "Couldnt receive message" << std::endl;
+			}
+			
 		}
 
 		//give messages to appropriate players
@@ -595,7 +610,7 @@ void OutOfBounds()
 	}
 	if (myPlayer.GetPosition().y < 0)
 	{
-		myPlayer.SetPosition(sf::Vector2f(myPlayer.GetPosition().y, screenHeight));
+		myPlayer.SetPosition(sf::Vector2f(myPlayer.GetPosition().x, screenHeight));
 	}
 
 	//check if ball touched edges //Maybe only for host?

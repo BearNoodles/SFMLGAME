@@ -56,8 +56,8 @@ private:
 	std::vector<Message> m_messages;
 	std::vector<Message> m_predictionHistory;
 
-	int x;
-	int y;
+	float x;
+	float y;
 	int m_reqMessages = 3;
 
 	sf::IpAddress m_IP;

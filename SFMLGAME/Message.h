@@ -3,7 +3,7 @@
 
 struct Message {
 	int id;
-	float x, y;
+	float x, y, velx, vely;
 	float timeSent;
 };
 

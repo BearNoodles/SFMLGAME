@@ -181,9 +181,16 @@ sf::Vector2f Player::PredictPosition(float time)
 	Message newPrediction;
 	newPrediction.x = x;
 	newPrediction.y = y;
+	newPrediction.velx = velx0;
+	newPrediction.vely = vely0;
 	newPrediction.timeSent = time;
 	newPrediction.id = msg0.id;
 	m_predictionHistory.push_back(newPrediction);
+
+	while (m_predictionHistory.size() > m_reqMessages)
+	{
+		m_predictionHistory.erase(m_predictionHistory.begin());
+	}
 
 	if (m_predictionHistory.size() == m_reqMessages)
 	{
