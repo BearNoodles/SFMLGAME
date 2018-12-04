@@ -2,13 +2,29 @@
 
 
 
-Player::Player(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, int ID)
+Player::Player()
 {
-	m_sprite.setTexture(texture);
-	m_sprite.setPosition(startPos);
+	m_acceleration = 0.025f;
+	m_velocity = sf::Vector2f(1, 0);
+
+}
+
+void Player::Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, int ID)
+{
+	m_texture = texture;
+	m_position = startPos;
+	m_colour = colour;
+	m_ID = ID;
+
+	m_sprite.setTexture(m_texture);
+	m_sprite.setPosition(m_position);
 	m_sprite.setScale(m_scale);
-	m_sprite.setColor(colour);
+	m_sprite.setColor(m_colour);
 	m_sprite.setOrigin(sf::Vector2f(texture.getSize().x / 2, texture.getSize().y / 2));
+
+	m_acceleration = 0.025f;
+	m_velocity = sf::Vector2f(0, 0);
+
 }
 
 void Player::UpdateSelf()
@@ -18,13 +34,7 @@ void Player::UpdateSelf()
 	m_dir = NormaliseVector2(m_dir, 0.1f);//unsure if need this
 
 	//TODO update controls
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-	{
-		if (MagnitudeVector2(m_velocity) < MAXSPEED)
-		{
-			m_velocity += m_dir * m_acceleration;
-		}
-	}
+	
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 	{
 		m_sprite.rotate(-0.3f);
@@ -33,17 +43,25 @@ void Player::UpdateSelf()
 	{
 		m_sprite.rotate(0.3f);
 	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+	{
+		if (MagnitudeVector2(m_velocity) < MAXSPEED)
+		{
+			m_velocity += m_dir * m_acceleration;
+		}
+	}
 
 	if (MagnitudeVector2(m_velocity) > MAXSPEED)
 	{
 		m_velocity = NormaliseVector2(m_velocity, MAXSPEED);
 	}
-	else if (MagnitudeVector2(m_velocity) > 0 && !sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+	else if (MagnitudeVector2(m_velocity) > 0)// && !sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 	{
 		m_velocity /= DRAG;
 	}
 
 	m_sprite.move(m_velocity);
+	m_position = m_sprite.getPosition();
 }
 
 void Player::UpdateOther()
@@ -74,9 +92,14 @@ sf::Sprite Player::GetSprite()
 	return m_sprite;
 }
 
+sf::Vector2f Player::GetPosition()
+{
+	return m_position;
+}
 void Player::SetPosition(sf::Vector2f pos)
 {
-	m_sprite.setPosition(pos);
+	m_position = pos;
+	m_sprite.setPosition(m_position);
 }
 sf::IpAddress Player::GetIP()
 {

@@ -19,7 +19,8 @@ void InitHost();
 void InitClient();
 void Init();
 void HostOrClient();
-void WaitForPlayers();
+bool WaitForPlayers();
+void OutOfBounds();
 sf::Vector2f NormaliseVector2(sf::Vector2f vector, float speed = 1);
 float MagnitudeVector2(sf::Vector2f vector);
 void Reset();
@@ -28,6 +29,7 @@ sf::Vector2f ballVelocity;
 int screenWidth = 1000;
 int screenHeight = 600;
 float MAXSPEED = 2.0f;
+float acceleration = 0.025f;
 
 sf::Font font;
 
@@ -37,9 +39,9 @@ sf::Texture goalTexture;
 
 sf::Text text;
 
+Player myPlayer;
+Player opponent;
 std::list<Player> playerList;
-Player* myPlayer;
-Player* tempPlayer;
 int playerCount;
 int myID;
 sf::Color* playerColours;
@@ -75,12 +77,6 @@ int main()
 												sf::Color(255, 0, 0, 250) };
 	
 
-	int screenWidth = 1000;
-	int screenHeight = 600;
-	float MAXSPEED = 2.0f;
-	float acceleration = 0.025f;
-	
-
 	if (!font.loadFromFile("font.ttf"))
 	{
 		// error...
@@ -89,6 +85,7 @@ int main()
 	if (!texture.loadFromFile("image.png"))
 	{
 		// error...
+		std::cout << "error loading image.png" << std::endl;
 	}
 
 	if (!ballTexture.loadFromFile("ball.png"))
@@ -146,53 +143,48 @@ int main()
 
 	sf::Clock clock; // starts the clock
 
-	//Setup or join a game
-	//HostOrClient();
-	while (true)
-	{
-		std::string choice;
-		std::cout << "Type 1 to start a new game or enter IP of host (press 2 for default host)" << std::endl;
-		std::cin >> choice;
-
-		if (choice == "1")
-		{
-			//InitHost();
-			// bind the socket to a port
-			if (socket.bind(hostPort) != sf::Socket::Done)
-			{
-				// error...
-			}
-
-			myID = 1;
-			playerCount = myID;
-
-			sf::Vector2f startPos(playerCount * startPosX, startPosY);
-			tempPlayer = new Player(texture, startPos, playerColours[playerCount], playerCount);
-			playerList.push_back(*tempPlayer);
-			break;
-		}
-		else if (choice == "2")
-		{
-			Init();
-			break;
-		}
-	}
-
-	//Wait for players to join and for host to start game
-	WaitForPlayers();
-
-	for (auto player : playerList)
-	{
-		if (myID == player.GetID())
-		{
-			myPlayer = &player;
-		}
-	}
 
 	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!", sf::Style::Resize);
 	window.setKeyRepeatEnabled(false);
 	//window.setPosition(sf::Vector2i(500, 50));
 	//window.setJoystickThreshold(100);
+
+	//Setup or join a game
+	HostOrClient();
+	
+
+
+	//Wait for players to join and for host to start game
+	while (true)
+	{
+		if (WaitForPlayers())
+		{
+			break;
+		}
+		window.clear();
+
+		for (auto player : playerList)
+		{
+			std::cout << "x " << player.GetSprite().getPosition().x << " y " << player.GetSprite().getPosition().y << std::endl;
+			window.draw(player.GetSprite());
+		}
+		window.draw(opponent.GetSprite());
+		window.draw(myPlayer.GetSprite());
+		window.draw(goal1);
+		window.draw(goal2);
+		window.draw(ball);
+		window.draw(text);
+		window.display();
+	}
+
+	/*for (auto player : playerList)
+	{
+		if (myID == player.GetID())
+		{
+			myPlayer = &player;
+		}
+	}*/
+
 
 	while (window.isOpen())
 	{
@@ -278,6 +270,8 @@ int main()
 			//Reset();
 		}
 
+		myPlayer.UpdateSelf();
+
 		for (auto player : playerList)
 		{
 			if (player.GetID() == myID)
@@ -290,12 +284,18 @@ int main()
 			}
 		}
 
+		OutOfBounds();
 
+		
 		window.clear();
 		for (auto player : playerList)
 		{ 
+			std::cout << "x " << player.GetSprite().getPosition().x << " y " << player.GetSprite().getPosition().y << std::endl;
 			window.draw(player.GetSprite());
 		}
+
+		window.draw(opponent.GetSprite());
+		window.draw(myPlayer.GetSprite());
 		window.draw(goal1);
 		window.draw(goal2);
 		window.draw(ball);
@@ -332,9 +332,11 @@ void InitHost()
 
 	myID = 1;
 	playerCount = myID;
-
 	sf::Vector2f startPos(playerCount * startPosX, startPosY);
-	playerList.push_back(Player(texture, startPos, playerColours[playerCount], playerCount));
+
+	myPlayer.Init(texture, startPos, playerColours[playerCount], playerCount);
+	//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
+	//playerList.push_back(tempPlayer);
 }
 
 void InitClient()
@@ -384,8 +386,9 @@ void InitClient()
 
 	for (int i = 0; i < playerCount; i++)
 	{
-		sf::Vector2f startPos(playerCount * startPosX, startPosY);
-		playerList.push_back(Player(texture, startPos, playerColours[playerCount], playerCount));
+		sf::Vector2f startPos(playerCount * startPosX, startPosY); 
+		//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
+		//playerList.push_back(tempPlayer);
 	}
 
 }
@@ -424,22 +427,22 @@ void OutOfBounds()
 		//}
 
 	//only check if self is out of bounds
-	if (myPlayer->GetSprite().getPosition().x > screenWidth)
+	if (myPlayer.GetPosition().x > screenWidth)
 	{
-		myPlayer->GetSprite().setPosition(0, myPlayer->GetSprite().getPosition().y);
+		myPlayer.SetPosition(sf::Vector2f(0, myPlayer.GetPosition().y));
 	}
-	if (myPlayer->GetSprite().getPosition().x < 0)
+	if (myPlayer.GetPosition().x < 0)
 	{
-		myPlayer->GetSprite().setPosition(screenWidth, myPlayer->GetSprite().getPosition().y);
+		myPlayer.SetPosition(sf::Vector2f(screenWidth, myPlayer.GetPosition().y));
 	}
 
-	if (myPlayer->GetSprite().getPosition().y > screenHeight)
+	if (myPlayer.GetPosition().y > screenHeight)
 	{
-		myPlayer->GetSprite().setPosition(myPlayer->GetSprite().getPosition().x, 0);
+		myPlayer.SetPosition(sf::Vector2f(myPlayer.GetPosition().x, 0));
 	}
-	if (myPlayer->GetSprite().getPosition().y < 0)
+	if (myPlayer.GetPosition().y < 0)
 	{
-		myPlayer->GetSprite().setPosition(myPlayer->GetSprite().getPosition().y, screenHeight);
+		myPlayer.SetPosition(sf::Vector2f(myPlayer.GetPosition().y, screenHeight));
 	}
 
 	//check if ball touched edges //Maybe only for host?
@@ -498,37 +501,44 @@ void HostOrClient()
 	}
 }
 
-void WaitForPlayers()
+bool WaitForPlayers()
 {
-	while (true)
+	
+	//TODO draw other players while waiting
+	if (myID == 1)
 	{
-		//TODO draw other players while waiting
-		if (myID == 1)
+		//start game if host presses space
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
 		{
-			//start game if host presses space
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-			{
-				break;
-			}
-			sf::IpAddress clientIP;
-			unsigned short clientPort;
-			sf::Packet packet;
-			std::string greeting;
-			if (socket.receive(packet, clientIP, clientPort) != sf::Socket::Done)
+			return true;
+		}
+		sf::IpAddress clientIP;
+		unsigned short clientPort;
+		sf::Packet packet;
+		std::string greeting;
+		if (socket.receive(packet, clientIP, clientPort) != sf::Socket::Done)
+		{
+			// error...
+			//recieve failed send hello again
+			//std::cout << "no messages yet" << std::endl;
+		}
+
+		packet << greeting;
+
+		if (greeting == "hello")
+		{
+			packet.clear();
+			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
 			{
 				// error...
 				//recieve failed send hello again
-				std::cout << "no messages yet" << std::endl;
+				//std::cout << "no messages yet" << std::endl;
 			}
-
-			packet << greeting;
-
-			if (greeting == "hello")
-			{
-				playerCount++;
-				sf::Vector2f startPos(startPosX * playerCount, startPosY * playerCount);
-				playerList.push_back(Player(texture, startPos, playerColours[playerCount], playerCount));
-			}
+			playerCount++;
+			sf::Vector2f startPos(startPosX * playerCount, startPosY * playerCount);
+			//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
+			//playerList.push_back(tempPlayer);
 		}
 	}
+	return false;
 }
