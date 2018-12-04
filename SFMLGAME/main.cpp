@@ -15,6 +15,7 @@
 #include "Message.h"
 
 #define MAXPLAYERS 8
+#define FPS 60
 
 void InitHost();
 void InitClient();
@@ -48,6 +49,9 @@ int myID;
 sf::Color* playerColours;
 int startPosX = 100;
 int startPosY = 100;
+
+sf::Time currentTime;
+sf::Time frameTime;
 
 sf::Sprite goal1;
 sf::Sprite goal2;
@@ -146,11 +150,13 @@ int main()
 
 	ballVelocity = sf::Vector2f(0, 0);
 
-	sf::Clock clock; // starts the clock
+	sf::Clock timerClock; // starts the clock
+	sf::Clock frameClock; // starts the clock
 
 
 	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!", sf::Style::Resize);
 	window.setKeyRepeatEnabled(false);
+	window.setFramerateLimit(FPS);
 	//window.setPosition(sf::Vector2i(500, 50));
 	//window.setJoystickThreshold(100);
 
@@ -200,6 +206,106 @@ int main()
 
 	while (window.isOpen())
 	{
+		frameTime = frameClock.restart();
+
+		currentTime = timerClock.getElapsedTime();
+
+		//send current position to opponent(s)
+		if (myID == 1)
+		{
+			Message msg;
+			msg.id = myID;
+			msg.x = myPlayer.GetPosition().x;
+			msg.y = myPlayer.GetPosition().y;
+			msg.timeSent = currentTime.asSeconds();
+			sf::Packet packet;
+			packet << msg.id << msg.x << msg.y << msg.timeSent;
+
+			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
+			{
+				// error...
+				//send failed try it again
+				std::cout << "Send message failed" << std::endl;
+			}
+		}
+		else 
+		{
+			Message msg;
+			msg.id = myID;
+			msg.x = myPlayer.GetPosition().x;
+			msg.y = myPlayer.GetPosition().y;
+			msg.timeSent = currentTime.asSeconds();
+			sf::Packet packet;
+			packet << msg.id << msg.x << msg.y << msg.timeSent;
+
+			if (socket.send(packet, hostIP, hostPort) != sf::Socket::Done)
+			{
+				// error...
+				//send failed try it again
+				std::cout << "Send message failed" << std::endl;
+			}
+		}
+
+		//check for messages received
+		if (myID == 1)
+		{
+			sf::Int8 id;
+			float x;
+			float y;
+			float time;
+			sf::Packet packet;
+			if (socket.receive(packet, clientIP, clientPort) == sf::Socket::NotReady)
+			{
+				// error...
+				//recieve failed send hello again
+				//std::cout << "no messages yet" << std::endl;
+			}
+			packet >> id >> x >> y >> time;
+			Message msg;
+			msg.id = id;
+			msg.x = x;
+			msg.y = y;
+			msg.timeSent = time;
+
+			messages.push_back({ id, x, y, time });
+		}
+		else
+		{
+			sf::Int8 id;
+			float x;
+			float y;
+			float time;
+			sf::Packet packet;
+			if (socket.receive(packet, hostIP, hostPort) == sf::Socket::NotReady)
+			{
+				// error...
+				//recieve failed send hello again
+				//std::cout << "no messages yet" << std::endl;
+			}
+			packet >> id >> x >> y >> time;
+			Message msg;
+			msg.id = id;
+			msg.x = x;
+			msg.y = y;
+			msg.y = y;
+
+			messages.push_back({ id, x, y, time });
+		}
+
+		//give messages to appropriate players
+		while (!messages.empty())
+		{
+			if (messages.front().id == opponent.GetID())
+			{
+				opponent.AddMessage(messages.front());
+				messages.pop_front();
+			}
+			else
+			{
+				messages.pop_front();
+			}
+		}
+
 		sf::Event event;
 		while (window.pollEvent(event))
 		{
@@ -282,18 +388,18 @@ int main()
 			//Reset();
 		}
 
-		myPlayer.UpdateSelf();
-		opponent.UpdateOther();
+		myPlayer.UpdateSelf(currentTime, frameTime);
+		opponent.UpdateOther(currentTime, frameTime);
 
 		for (auto player : playerList)
 		{
 			if (player.GetID() == myID)
 			{
-				player.UpdateSelf();
+				player.UpdateSelf(currentTime, frameTime);
 			}
 			else
 			{
-				player.UpdateOther();
+				player.UpdateOther(currentTime, frameTime);
 			}
 		}
 

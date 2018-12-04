@@ -16,8 +16,8 @@ public:
 
 	void Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, int ID);
 
-	void UpdateSelf();
-	void UpdateOther();
+	void UpdateSelf(sf::Time time, sf::Time frameTime);
+	void UpdateOther(sf::Time time, sf::Time frameTime);
 
 	int GetID();
 	void SetID(int id);
@@ -30,7 +30,7 @@ public:
 
 	sf::Sprite GetSprite();
 
-	void PredictPosition(float time);
+	sf::Vector2f PredictPosition(float time);
 	void AddMessage(const Message &msg);
 
 	sf::IpAddress GetIP();
@@ -51,9 +51,13 @@ private:
 	float m_acceleration;
 	float DRAG = 1.0005f;
 
+	sf::Time m_frameTime;
+
 	std::vector<Message> m_messages;
 	std::vector<Message> m_predictionHistory;
 
+	int x;
+	int y;
 	int m_reqMessages = 3;
 
 	sf::IpAddress m_IP;

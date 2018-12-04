@@ -29,7 +29,7 @@ void Player::Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, 
 
 }
 
-void Player::UpdateSelf()
+void Player::UpdateSelf(sf::Time time, sf::Time frameTime)
 {
 	m_dir.x = sinf((3.14159 / 180) * m_sprite.getRotation());
 	m_dir.y = -cosf((3.14159 / 180) * m_sprite.getRotation());
@@ -66,9 +66,12 @@ void Player::UpdateSelf()
 	m_position = m_sprite.getPosition();
 }
 
-void Player::UpdateOther()
+void Player::UpdateOther(sf::Time time, sf::Time frameTime)
 {
-
+	m_frameTime = frameTime;
+	m_position = PredictPosition(time.asSeconds());
+	//TODO predict and set opponent velocity
+	m_sprite.setPosition(m_position);
 }
 
 int Player::GetID()
@@ -134,29 +137,23 @@ float Player::MagnitudeVector2(sf::Vector2f vector)
 	return sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
 
-void Player::PredictPosition(float time) {
+sf::Vector2f Player::PredictPosition(float time) 
+{
 	const int msize = m_messages.size();
-	std::assert(msize == m_reqMessages);
+	assert(msize == m_reqMessages);
 	const Message& msg0 = m_messages[msize - 1];
-	const Message& msg1 = messages_[msize - 2];
-	const Message& msg2 = messages_[msize - 3];
+	const Message& msg1 = m_messages[msize - 2];
+	const Message& msg2 = m_messages[msize - 3];
 
-	// FIXME: Implement prediction here!
-	// You have:
-	// - the history of position messages received, in "messages_"
-	//   (msg0 is the most recent, msg1 the 2nd most recent, msg2 the 3rd most recent)
-	// - the current time, in "time"
-	// You need to update:
-	// - the predicted position at the current time, in "x_" and "y_"
 
-	x_ = msg0.x;
-	y_ = msg0.y;
+	x = msg0.x;
+	y = msg0.y;
 
 	//Linear prediction
-	float velx = (msg0.x - msg1.x) / (msg0.time - msg1.time);
-	float vely = (msg0.y - msg1.y) / (msg0.time - msg1.time);
-	x_ += velx * (time - msg0.time);
-	y_ += vely * (time - msg0.time);
+	float velx = (msg0.x - msg1.x) / (msg0.timeSent - msg1.timeSent);
+	float vely = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
+	x += velx * (time - msg0.timeSent);
+	y += vely * (time - msg0.timeSent);
 
 
 
@@ -175,29 +172,31 @@ void Player::PredictPosition(float time) {
 	//y_ += (vely0 * dTime) + 0.5f * (accy * (dTime * dTime));
 
 	//Interpolated prediction
-	TankMessage newPrediction;
-	newPrediction.x = x_;
-	newPrediction.y = y_;
-	newPrediction.time = time;
+	Message newPrediction;
+	newPrediction.x = x;
+	newPrediction.y = y;
+	newPrediction.timeSent = time;
 	newPrediction.id = msg0.id;
-	predictionHistory.push_back(newPrediction);
+	m_predictionHistory.push_back(newPrediction);
 
-	if (predictionHistory.size() == reqMessages)
+	if (m_predictionHistory.size() == m_reqMessages)
 	{
-		const TankMessage& imsg0 = predictionHistory[reqMessages - 1];
-		const TankMessage& imsg1 = predictionHistory[reqMessages - 2];
-		const TankMessage& imsg2 = predictionHistory[reqMessages - 3];
-		float ix_ = imsg0.x;
-		float iy_ = imsg0.y;
+		const Message& imsg0 = m_predictionHistory[m_reqMessages - 1];
+		const Message& imsg1 = m_predictionHistory[m_reqMessages - 2];
+		const Message& imsg2 = m_predictionHistory[m_reqMessages - 3];
+		float ix = imsg0.x;
+		float iy = imsg0.y;
 
-		float ivelx = (imsg0.x - imsg1.x) / (imsg0.time - imsg1.time);
-		float ively = (imsg0.y - imsg1.y) / (imsg0.time - imsg1.time);
-		ix_ += ivelx * (time - imsg0.time);
-		iy_ += ively * (time - imsg0.time);
+		float ivelx = (imsg0.x - imsg1.x) / (imsg0.timeSent - imsg1.timeSent);
+		float ively = (imsg0.y - imsg1.y) / (imsg0.timeSent - imsg1.timeSent);
+		ix += ivelx * (time - imsg0.timeSent);
+		iy += ively * (time - imsg0.timeSent);
 
-		x_ = (x_ - ix_) / 2;
-		y_ = (y_ - iy_) / 2;
+		x = (x - ix) / 2;
+		y = (y - iy) / 2;
 	}
+
+	return sf::Vector2f(x, y);
 
 }
 void Player::AddMessage(const Message &message)
