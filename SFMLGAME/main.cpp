@@ -5,20 +5,29 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
+#include <SFML/Network.hpp>
 
+#include <list>
+#include <vector>
+#include <string>
+
+#include "Player.h"
+
+#define MAXPLAYERS 8
+
+void InitHost();
+void InitClient();
+void Init();
+void HostOrClient();
+void WaitForPlayers();
 sf::Vector2f NormaliseVector2(sf::Vector2f vector, float speed = 1);
 float MagnitudeVector2(sf::Vector2f vector);
 void Reset();
 
-sf::Vector2f vel1;
-sf::Vector2f vel2;
-sf::Vector2f vel3;
-sf::Vector2f dir;
-sf::Vector2f dir2;
+sf::Vector2f ballVelocity;
 int screenWidth = 1000;
 int screenHeight = 600;
 float MAXSPEED = 2.0f;
-float acceleration = 0.025f;
 
 sf::Font font;
 
@@ -28,14 +37,19 @@ sf::Texture goalTexture;
 
 sf::Text text;
 
-sf::Sprite player1;
-sf::Sprite player2;
+std::list<Player> playerList;
+Player* myPlayer;
+Player* tempPlayer;
+int playerCount;
+int myID;
+sf::Color* playerColours;
+int startPosX = 100;
+int startPosY = 100;
+
 sf::Sprite goal1;
 sf::Sprite goal2;
 sf::Sprite ball;
 
-sf::Vector2f player1StartPos(200, 100);
-sf::Vector2f player2StartPos(800, 100);
 sf::Vector2f goal1StartPos(800, 300);
 sf::Vector2f goal2StartPos(200, 300);
 sf::Vector2f ballStartPos(500, 400);
@@ -43,19 +57,29 @@ sf::Vector2f ballStartPos(500, 400);
 int player1Score = 0;
 int player2Score = 0;
 
-//sf::CircleShape ball(100.f);
-//ball.setTexture(&ballTexture,false);
-//ball.setPosition(500, 400);
+
+sf::UdpSocket socket;
+sf::IpAddress hostIP = "127.0.0.1";
+unsigned short hostPort = 54444;
+
 int main()
 {
+	socket.setBlocking(false);
+	playerColours = new sf::Color[MAXPLAYERS]{  sf::Color(255, 0, 0, 250),
+												sf::Color(255, 0, 0, 250),
+												sf::Color(255, 0, 0, 250),
+												sf::Color(255, 0, 0, 250),
+												sf::Color(255, 0, 0, 250),
+												sf::Color(255, 0, 0, 250),
+												sf::Color(255, 0, 0, 250),
+												sf::Color(255, 0, 0, 250) };
+	
+
 	int screenWidth = 1000;
 	int screenHeight = 600;
 	float MAXSPEED = 2.0f;
 	float acceleration = 0.025f;
-	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!", sf::Style::Resize);
-	window.setKeyRepeatEnabled(false);
-	//window.setPosition(sf::Vector2i(500, 50));
-	//window.setJoystickThreshold(100);
+	
 
 	if (!font.loadFromFile("font.ttf"))
 	{
@@ -95,17 +119,6 @@ int main()
 
 	text.setPosition((screenWidth / 2) - (text.getString().getSize() * text.getCharacterSize()), 10);
 
-	player1.setTexture(texture);
-	player1.setPosition(player1StartPos);
-	player1.setScale(sf::Vector2f(0.03f, 0.03f));
-	player1.setColor(sf::Color(0, 0, 255, 250));
-	player1.setOrigin(sf::Vector2f(texture.getSize().x / 2, texture.getSize().y / 2));
-
-	player2.setTexture(texture);
-	player2.setPosition(player2StartPos);
-	player2.setScale(sf::Vector2f(0.03f, 0.03f));
-	player2.setColor(sf::Color(255, 0, 0, 250));
-	player2.setOrigin(sf::Vector2f(texture.getSize().x / 2, texture.getSize().y / 2));
 
 	goal1.setTexture(goalTexture);
 	goal1.setPosition(goal1StartPos);
@@ -129,13 +142,57 @@ int main()
 	//ball.setTexture(&ballTexture,false);
 	//ball.setPosition(500, 400);
 
-	vel1 = sf::Vector2f(0, 0);
-	vel2 = sf::Vector2f(0, 0);
-	vel3 = sf::Vector2f(0, 0);
-	dir = sf::Vector2f(0, 0);
-	dir2 = sf::Vector2f(0, 0);
+	ballVelocity = sf::Vector2f(0, 0);
 
 	sf::Clock clock; // starts the clock
+
+	//Setup or join a game
+	//HostOrClient();
+	while (true)
+	{
+		std::string choice;
+		std::cout << "Type 1 to start a new game or enter IP of host (press 2 for default host)" << std::endl;
+		std::cin >> choice;
+
+		if (choice == "1")
+		{
+			//InitHost();
+			// bind the socket to a port
+			if (socket.bind(hostPort) != sf::Socket::Done)
+			{
+				// error...
+			}
+
+			myID = 1;
+			playerCount = myID;
+
+			sf::Vector2f startPos(playerCount * startPosX, startPosY);
+			tempPlayer = new Player(texture, startPos, playerColours[playerCount], playerCount);
+			playerList.push_back(*tempPlayer);
+			break;
+		}
+		else if (choice == "2")
+		{
+			Init();
+			break;
+		}
+	}
+
+	//Wait for players to join and for host to start game
+	WaitForPlayers();
+
+	for (auto player : playerList)
+	{
+		if (myID == player.GetID())
+		{
+			myPlayer = &player;
+		}
+	}
+
+	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!", sf::Style::Resize);
+	window.setKeyRepeatEnabled(false);
+	//window.setPosition(sf::Vector2i(500, 50));
+	//window.setJoystickThreshold(100);
 
 	while (window.isOpen())
 	{
@@ -150,283 +207,95 @@ int main()
 				std::cout << "new width: " << event.size.width << std::endl;
 				std::cout << "new height: " << event.size.height << std::endl;
 			}
-			//if (event.type == sf::Event::TextEntered)
-			//{
-			//	if (event.text.unicode < 128)
-			//		std::cout << "ASCII character typed: " << static_cast<char>(event.text.unicode) << std::endl;
-			//}
-			//if (event.type == sf::Event::KeyPressed)
-			//{
-			//	if (event.key.code == sf::Keyboard::Escape)
-			//	{
-			//		std::cout << "the escape key was pressed" << std::endl;
-			//		std::cout << "control:" << event.key.control << std::endl;
-			//		std::cout << "alt:" << event.key.alt << std::endl;
-			//		std::cout << "shift:" << event.key.shift << std::endl;
-			//		std::cout << "system:" << event.key.system << std::endl;
-			//	}
-			//}
-			//if (event.type == sf::Event::MouseWheelScrolled)
-			//{
-			//	if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel)
-			//		std::cout << "wheel type: vertical" << std::endl;
-			//	else if (event.mouseWheelScroll.wheel == sf::Mouse::HorizontalWheel)
-			//		std::cout << "wheel type: horizontal" << std::endl;
-			//	else
-			//		std::cout << "wheel type: unknown" << std::endl;
-			//	std::cout << "wheel movement: " << event.mouseWheelScroll.delta << std::endl;
-			//	std::cout << "mouse x: " << event.mouseWheelScroll.x << std::endl;
-			//	std::cout << "mouse y: " << event.mouseWheelScroll.y << std::endl;
-			//}
-			//if (event.type == sf::Event::MouseButtonPressed)
-			//{
-			//	if (event.mouseButton.button == sf::Mouse::Right)
-			//	{
-			//		std::cout << "the right button was pressed" << std::endl;
-			//		std::cout << "mouse x: " << event.mouseButton.x << std::endl;
-			//		std::cout << "mouse y: " << event.mouseButton.y << std::endl;
-			//	}
-			//}
-			//if (event.type == sf::Event::MouseMoved)
-			//{
-			//	std::cout << "new mouse x: " << event.mouseMove.x << std::endl;
-			//	std::cout << "new mouse y: " << event.mouseMove.y << std::endl;
-			//}
-			//if (event.type == sf::Event::MouseEntered)
-			//	std::cout << "the mouse cursor has entered the window" << std::endl;
-			//
-			//if (event.type == sf::Event::MouseLeft)
-			//	std::cout << "the mouse cursor has left the window" << std::endl;
-			//if (event.type == sf::Event::JoystickButtonPressed)
-			//{
-			//	std::cout << "joystick button pressed!" << std::endl;
-			//	std::cout << "joystick id: " << event.joystickButton.joystickId << std::endl;
-			//	std::cout << "button: " << event.joystickButton.button << std::endl;
-			//}
-			//if (event.type == sf::Event::JoystickMoved)
-			//{
-			//	if (event.joystickMove.axis == sf::Joystick::X)
-			//	{
-			//		std::cout << "X axis moved!" << std::endl;
-			//		std::cout << "joystick id: " << event.joystickMove.joystickId << std::endl;
-			//		std::cout << "new position: " << event.joystickMove.position << std::endl;
-			//	}
-			//}
-			//if (event.type == sf::Event::JoystickConnected)
-			//	std::cout << "joystick connected: " << event.joystickConnect.joystickId << std::endl;
-			//
-			//if (event.type == sf::Event::JoystickDisconnected)
-			//std::cout << "joystick disconnected: " << event.joystickConnect.joystickId << std::endl;
 		}
+
 		int i = text.getString().getSize();
 		std::string str = "Score " + std::to_string(player1Score) + " - " + std::to_string(player2Score);
 		//text.setPosition((screenWidth / 2) - ((text.getString().getSize() * text.getCharacterSize()) / 2), 10);
 		text.setPosition((screenWidth / 2) - 100, 10);
 		
 		text.setString(str);
-
-		dir.x = sinf((3.14159 / 180) * player1.getRotation());
-		dir.y = -cosf((3.14159 / 180) * player1.getRotation());
-
-		dir2.x = sinf((3.14159 / 180) * player2.getRotation());
-		dir2.y = -cosf((3.14159 / 180) * player2.getRotation());
-
-		dir = NormaliseVector2(dir, 0.1f);
-		dir2 = NormaliseVector2(dir2, 0.1f);
-
-
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-		{
-			player1.rotate(-0.3f);
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-		{
-			player1.rotate(0.3f);
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-		{
-			if (MagnitudeVector2(vel1) < MAXSPEED)
-			{
-				vel1 += dir * acceleration;
-			}
-		}
-
-		if (player1.getPosition().x > screenWidth)
-		{
-			player1.setPosition(0, player1.getPosition().y);
-		}
-		if (player1.getPosition().x < 0)
-		{
-			player1.setPosition(screenWidth, player1.getPosition().y);
-		}
-		if (player1.getPosition().y > screenHeight)
-		{
-			player1.setPosition(player1.getPosition().x, 0);
-		}
-		if (player1.getPosition().y < 0)
-		{
-			player1.setPosition(player1.getPosition().x, screenHeight);
-		}
-
-		if (player2.getPosition().x > screenWidth)
-		{
-			player2.setPosition(0, player2.getPosition().y);
-		}
-		if (player2.getPosition().x < 0)
-		{
-			player2.setPosition(screenWidth, player2.getPosition().y);
-		}
-		if (player2.getPosition().y > screenHeight)
-		{
-			player2.setPosition(player2.getPosition().x, 0);
-		}
-		if (player2.getPosition().y < 0)
-		{
-			player2.setPosition(player2.getPosition().x, screenHeight);
-		}
-
-		if (ball.getPosition().x > screenWidth)
-		{
-			vel3.x *= -1;
-			if (vel3.x >= 0)
-			{
-				vel3.x = -0.1f;
-			}
-		}
-		if (ball.getPosition().x < 0)
-		{
-			vel3.x *= -1;
-			if (vel3.x <= 0)
-			{
-				vel3.x = 0.1f;
-			}
-		}
-		if (ball.getPosition().y > screenHeight)
-		{
-			vel3.y *= -1;
-			if (vel3.y >= 0)
-			{
-				vel3.y = -0.1f;
-			}
-		}
-		if (ball.getPosition().y < 0)
-		{
-			vel3.y *= -1;
-			if (vel3.y <= 0)
-			{
-				vel3.y = 0.1f;
-			}
-		}
-
 		
-
-		if (player1.getGlobalBounds().intersects(player2.getGlobalBounds()))
+		for (auto player1 : playerList)
 		{
-			float totalSpeed = MagnitudeVector2(vel1) + MagnitudeVector2(vel2);
-			sf::Vector2f dir1 = NormaliseVector2(player1.getPosition() - player2.getPosition());
-			//sf::Vector2f dir2 = NormaliseVector2(player2.getPosition()) - NormaliseVector2(player1.getPosition());
-			sf::Vector2f dir2 = -dir1;
-			vel1 = dir1 * (totalSpeed / 2);
-			vel2 = dir2 * (totalSpeed / 2);
-
-			//vel2 = sf::Vector2f(0.0f, 1.0f);
-		}
-		else if (player1.getGlobalBounds().intersects(ball.getGlobalBounds()))
-		{
-			float totalSpeed = MagnitudeVector2(vel1) + MagnitudeVector2(vel3);
-			sf::Vector2f dir1 = NormaliseVector2(player1.getPosition() - ball.getPosition());
-			sf::Vector2f dir3 = -dir1;
-			sf::Vector2f newVel1 = dir1 * (totalSpeed / 4);
-
-			vel1.x = (vel1.x + newVel1.x) / 2;
-			vel1.y = (vel1.y + newVel1.y) / 2;
-
-			vel3 = dir3 * (totalSpeed * 3 / 4);
-
-			if (MagnitudeVector2(vel3) == 0)
+			for (auto player2 : playerList)
 			{
-				vel3 = dir3 / 5.0f;
+				if (player1.GetID() == player2.GetID())
+				{
+					continue;
+				}
+				if (player1.GetSprite().getGlobalBounds().intersects(player2.GetSprite().getGlobalBounds()))
+				{
+					float totalSpeed = MagnitudeVector2(player1.GetVelocity()) + MagnitudeVector2(player2.GetVelocity());
+					sf::Vector2f dir1 = NormaliseVector2(player1.GetSprite().getPosition() - player2.GetSprite().getPosition());
+					//sf::Vector2f dir2 = NormaliseVector2(player2.getPosition()) - NormaliseVector2(player1.getPosition());
+					sf::Vector2f dir2 = -dir1;
+					player1.SetVelocity(dir1 * (totalSpeed / 2));
+					player2.SetVelocity(dir2 * (totalSpeed / 2));
+
+					//vel2 = sf::Vector2f(0.0f, 1.0f);
+				}
+			}
+
+			//check if any player collided with ball
+			if (player1.GetSprite().getGlobalBounds().intersects(ball.getGlobalBounds()))
+			{
+				float totalSpeed = MagnitudeVector2(player1.GetVelocity()) + MagnitudeVector2(ballVelocity);
+				sf::Vector2f pdir = NormaliseVector2(player1.GetSprite().getPosition() - ball.getPosition());
+				sf::Vector2f bdir = -pdir;
+				sf::Vector2f newVel = pdir * (totalSpeed / 4);
+
+				player1.SetVelocity(sf::Vector2f((player1.GetVelocity().x + newVel.x) / 2, (player1.GetVelocity().y + newVel.y) / 2));
+				ballVelocity = bdir * (totalSpeed * 3 / 4);
+
+				if (MagnitudeVector2(ballVelocity) == 0)
+				{
+					ballVelocity = bdir / 5.0f;
+				}
 			}
 		}
-		else if (player2.getGlobalBounds().intersects(ball.getGlobalBounds()))
-		{
-			float totalSpeed = MagnitudeVector2(vel2) + MagnitudeVector2(vel3);
-			sf::Vector2f dir2 = NormaliseVector2(player2.getPosition() - ball.getPosition());
-			sf::Vector2f dir3 = -dir2;
-			sf::Vector2f newVel2 = dir2 * (totalSpeed / 4);
-
-			vel2.x = (vel2.x + newVel2.x) / 2;
-			vel2.y = (vel2.y + newVel2.y) / 2;
-
-			vel3 = dir3 * (totalSpeed * 3 / 4);
-
-			
-			if (MagnitudeVector2(vel3) == 0)
-			{
-				vel3 = dir3 / 5.0f;
-			}
-		}
-
-
 		
-		if (MagnitudeVector2(vel1) > MAXSPEED)
+		if (MagnitudeVector2(ballVelocity) > MAXSPEED)
 		{
-			vel1 = NormaliseVector2(vel1, MAXSPEED);
+			ballVelocity = NormaliseVector2(ballVelocity, MAXSPEED);
 		}
-		else if (MagnitudeVector2(vel1) > 0 && sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+		else if (MagnitudeVector2(ballVelocity) > 0)
 		{
-			vel1 /= 1.0005f;
-		}
-		if (MagnitudeVector2(vel2) > MAXSPEED)
-		{
-			vel2 = NormaliseVector2(vel2, MAXSPEED);
-		}
-		else if (MagnitudeVector2(vel2) > 0)
-		{
-			vel2 /= 1.0005f;
-		}
-		if (MagnitudeVector2(vel3) > MAXSPEED)
-		{
-			vel3 = NormaliseVector2(vel3, MAXSPEED);
-		}
-		else if (MagnitudeVector2(vel3) > 0)
-		{
-			vel3 /= 1.0003f;
+			ballVelocity /= 1.0003f;
 		}
 
-		player1.move(vel1);
-		player2.move(vel2);
-		ball.move(vel3);
+		ball.move(ballVelocity);
 
-		std::cout << " ball speed " << vel1.x << " , " << vel1.y << std::endl;
 
 		if (ball.getGlobalBounds().intersects(goal1.getGlobalBounds()))
 		{
 			player1Score++;
-			Reset();
+			//Reset();
 		}
 		else if (ball.getGlobalBounds().intersects(goal2.getGlobalBounds()))
 		{
 			player2Score++;
-			Reset();
+			//Reset();
+		}
+
+		for (auto player : playerList)
+		{
+			if (player.GetID() == myID)
+			{
+				player.UpdateSelf();
+			}
+			else
+			{
+				player.UpdateOther();
+			}
 		}
 
 
-		// get the global mouse position (relative to the desktop)
-		sf::Vector2i globalPosition = sf::Mouse::getPosition();
-
-		// get the local mouse position (relative to a window)
-		sf::Vector2i localPosition = sf::Mouse::getPosition(window); // window is a sf::Window
-																	 //sf::Time elapsed1 = clock.getElapsedTime();
-																	 //std::cout << elapsed1.asSeconds() << std::endl;
-																	 //clock.restart();
-																	 //
-																	 //sf::Time elapsed2 = clock.getElapsedTime();
-																	 //std::cout << elapsed2.asSeconds() << std::endl;
-
 		window.clear();
-		window.draw(player1);
-		window.draw(player2);
+		for (auto player : playerList)
+		{ 
+			window.draw(player.GetSprite());
+		}
 		window.draw(goal1);
 		window.draw(goal2);
 		window.draw(ball);
@@ -453,20 +322,213 @@ float MagnitudeVector2(sf::Vector2f vector)
 	return sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
 
+void InitHost()
+{
+	// bind the socket to a port
+	if (socket.bind(hostPort) != sf::Socket::Done)
+	{
+		// error...
+	}
+
+	myID = 1;
+	playerCount = myID;
+
+	sf::Vector2f startPos(playerCount * startPosX, startPosY);
+	playerList.push_back(Player(texture, startPos, playerColours[playerCount], playerCount));
+}
+
+void InitClient()
+{
+	// bind the socket to a port
+	if (socket.bind(sf::Socket::AnyPort) != sf::Socket::Done)
+	{
+		// error...
+	}
+
+
+	std::string s = "hello";
+	std::string r;
+	while (true)
+	{
+		std::string s = "hello";
+
+		sf::Packet packet;
+		packet << s;
+
+		if (socket.send(packet, hostIP, hostPort) != sf::Socket::Done)
+		{
+			// error...
+			//send failed try it again
+		}
+
+		packet.clear();
+
+		std::string r;
+
+		if (socket.receive(packet, hostIP, hostPort) != sf::Socket::Done)
+		{
+			// error...
+			//recieve failed send hello again
+		}
+
+		packet >> r;
+
+		if (std::stoi(r) > 1)
+		{
+			break;
+		}
+	}
+
+	myID = std::stoi(r);
+	playerCount = myID;
+
+	for (int i = 0; i < playerCount; i++)
+	{
+		sf::Vector2f startPos(playerCount * startPosX, startPosY);
+		playerList.push_back(Player(texture, startPos, playerColours[playerCount], playerCount));
+	}
+
+}
+
+void Init()
+{
+
+}
+
 void Reset()
 {
-	player1.setPosition(player1StartPos);
-	player2.setPosition(player2StartPos);
+	//player1.setPosition(player1StartPos);
+	//player2.setPosition(player2StartPos);
+	//
+	//goal1.setPosition(goal1StartPos);
+	//goal2.setPosition(goal2StartPos);
+	//
+	//ball.setPosition(ballStartPos);
+	//
+	//vel1 = sf::Vector2f(0, 0);
+	//vel2 = sf::Vector2f(0, 0);
+	//ballVelocity = sf::Vector2f(0, 0);
+	//dir = sf::Vector2f(0, 0);
+	//dir2 = sf::Vector2f(0, 0);
+}
 
-	goal1.setPosition(goal1StartPos);
-	goal2.setPosition(goal2StartPos);
+void OutOfBounds()
+{
+	//check who is out of bounds
+		//for (auto player : playerList)
+		//{
+		//	if (player.GetSprite.GetPosition().x > screenWidth)
+		//	{
+		//		player.GetSprite.SetPosition(0.0f, player.GetSprite.GetPosition().y);
+		//	}
+		//}
 
-	ball.setPosition(ballStartPos);
+	//only check if self is out of bounds
+	if (myPlayer->GetSprite().getPosition().x > screenWidth)
+	{
+		myPlayer->GetSprite().setPosition(0, myPlayer->GetSprite().getPosition().y);
+	}
+	if (myPlayer->GetSprite().getPosition().x < 0)
+	{
+		myPlayer->GetSprite().setPosition(screenWidth, myPlayer->GetSprite().getPosition().y);
+	}
 
-	vel1 = sf::Vector2f(0, 0);
-	vel2 = sf::Vector2f(0, 0);
-	vel3 = sf::Vector2f(0, 0);
-	dir = sf::Vector2f(0, 0);
-	dir2 = sf::Vector2f(0, 0);
+	if (myPlayer->GetSprite().getPosition().y > screenHeight)
+	{
+		myPlayer->GetSprite().setPosition(myPlayer->GetSprite().getPosition().x, 0);
+	}
+	if (myPlayer->GetSprite().getPosition().y < 0)
+	{
+		myPlayer->GetSprite().setPosition(myPlayer->GetSprite().getPosition().y, screenHeight);
+	}
 
+	//check if ball touched edges //Maybe only for host?
+	if (ball.getPosition().x > screenWidth)
+	{
+		ballVelocity.x *= -1;
+		if (ballVelocity.x >= 0)
+		{
+			ballVelocity.x = -0.1f;
+		}
+	}
+	if (ball.getPosition().x < 0)
+	{
+		ballVelocity.x *= -1;
+		if (ballVelocity.x <= 0)
+		{
+			ballVelocity.x = 0.1f;
+		}
+	}
+	if (ball.getPosition().y > screenHeight)
+	{
+		ballVelocity.y *= -1;
+		if (ballVelocity.y >= 0)
+		{
+			ballVelocity.y = -0.1f;
+		}
+	}
+	if (ball.getPosition().y < 0)
+	{
+		ballVelocity.y *= -1;
+		if (ballVelocity.y <= 0)
+		{
+			ballVelocity.y = 0.1f;
+		}
+	}
+}
+
+void HostOrClient()
+{
+	while (true)
+	{
+		std::string choice;
+		std::cout << "Type 1 to start a new game or enter IP of host (press 2 for default host)" << std::endl;
+		std::cin >> choice;
+
+		if (choice == "1")
+		{
+			InitHost();
+			break;
+		}
+		else if (choice == "2")
+		{
+			Init();
+			break;
+		}
+	}
+}
+
+void WaitForPlayers()
+{
+	while (true)
+	{
+		//TODO draw other players while waiting
+		if (myID == 1)
+		{
+			//start game if host presses space
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+			{
+				break;
+			}
+			sf::IpAddress clientIP;
+			unsigned short clientPort;
+			sf::Packet packet;
+			std::string greeting;
+			if (socket.receive(packet, clientIP, clientPort) != sf::Socket::Done)
+			{
+				// error...
+				//recieve failed send hello again
+				std::cout << "no messages yet" << std::endl;
+			}
+
+			packet << greeting;
+
+			if (greeting == "hello")
+			{
+				playerCount++;
+				sf::Vector2f startPos(startPosX * playerCount, startPosY * playerCount);
+				playerList.push_back(Player(texture, startPos, playerColours[playerCount], playerCount));
+			}
+		}
+	}
 }
