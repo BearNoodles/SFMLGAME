@@ -61,8 +61,8 @@ void Player::UpdateSelf(sf::Time time, sf::Time frameTime)
 	{
 		m_velocity /= DRAG;
 	}
-
-	m_sprite.move(m_velocity);
+	sf::Vector2f ne = m_velocity * time.asSeconds();
+	m_sprite.move(m_velocity * time.asSeconds() / 100.0f);
 	m_position = m_sprite.getPosition();
 }
 
@@ -140,7 +140,13 @@ float Player::MagnitudeVector2(sf::Vector2f vector)
 sf::Vector2f Player::PredictPosition(float time) 
 {
 	const int msize = m_messages.size();
-	assert(msize == m_reqMessages);
+	//assert(msize == m_reqMessages);
+	if (msize != m_reqMessages)
+	{
+		//wrong messageList size;
+		return m_position;
+
+	}
 	const Message& msg0 = m_messages[msize - 1];
 	const Message& msg1 = m_messages[msize - 2];
 	const Message& msg2 = m_messages[msize - 3];
@@ -150,26 +156,26 @@ sf::Vector2f Player::PredictPosition(float time)
 	y = msg0.y;
 
 	//Linear prediction
-	float velx = (msg0.x - msg1.x) / (msg0.timeSent - msg1.timeSent);
-	float vely = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
-	x += velx * (time - msg0.timeSent);
-	y += vely * (time - msg0.timeSent);
+	//float velx = (msg0.posx - msg1.posx) / (msg0.timeSent - msg1.timeSent);
+	//float vely = (msg0.posy - msg1.posy) / (msg0.timeSent - msg1.timeSent);
+	//x += velx * (time - msg0.timeSent);
+	//y += vely * (time - msg0.timeSent);
 
 
 
 	//Quadratic prediction
-	//float velx0 = (msg0.x - msg1.x) / (msg0.time - msg1.time);
-	//float vely0 = (msg0.y - msg1.y) / (msg0.time - msg1.time);
-	//float velx1 = (msg1.x - msg2.x) / (msg1.time - msg2.time);
-	//float vely1 = (msg1.y - msg2.y) / (msg1.time - msg2.time);
-	//
-	//float accx = (velx0 - velx1) / (msg0.time - msg1.time);
-	//float accy = (vely0 - vely1) / (msg0.time - msg1.time);
-	//
-	//float dTime = time - msg0.time;
-	//
-	//x_ += (velx0 * dTime) + 0.5f * (accx * (dTime * dTime));
-	//y_ += (vely0 * dTime) + 0.5f * (accy * (dTime * dTime));
+	float velx0 = (msg0.x - msg1.x) / (msg0.timeSent - msg1.timeSent);
+	float vely0 = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
+	float velx1 = (msg1.x - msg2.x) / (msg1.timeSent - msg2.timeSent);
+	float vely1 = (msg1.y - msg2.y) / (msg1.timeSent - msg2.timeSent);
+	
+	float accx = (velx0 - velx1) / (msg0.timeSent - msg1.timeSent);
+	float accy = (vely0 - vely1) / (msg0.timeSent - msg1.timeSent);
+	
+	float dTime = time - msg0.timeSent;
+	
+	x += (velx0 * dTime) + 0.5f * (accx * (dTime * dTime));
+	y += (vely0 * dTime) + 0.5f * (accy * (dTime * dTime));
 
 	//Interpolated prediction
 	Message newPrediction;
@@ -202,7 +208,7 @@ sf::Vector2f Player::PredictPosition(float time)
 void Player::AddMessage(const Message &message)
 {
 
-	if (m_messages.size() == m_reqMessages)
+	while (m_messages.size() >= m_reqMessages)
 	{
 		m_messages.erase(m_messages.begin());
 	}

@@ -52,6 +52,8 @@ int startPosY = 100;
 
 sf::Time currentTime;
 sf::Time frameTime;
+sf::Time messageTime;
+bool msgReady;
 
 sf::Sprite goal1;
 sf::Sprite goal2;
@@ -152,6 +154,7 @@ int main()
 
 	sf::Clock timerClock; // starts the clock
 	sf::Clock frameClock; // starts the clock
+	sf::Clock messageClock; // starts the clock
 
 
 	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!", sf::Style::Resize);
@@ -203,40 +206,52 @@ int main()
 		player.Init(texture, startPos, playerColours[currentPlayer], currentPlayer);
 	}
 
-
+	int counter = 0;
+	msgReady = false;
 	while (window.isOpen())
 	{
 		frameTime = frameClock.restart();
 
 		currentTime = timerClock.getElapsedTime();
 
+		messageTime = messageClock.getElapsedTime();
+
+		if (messageTime.asSeconds() > 0.5f)
+		{
+			messageClock.restart();
+			msgReady = true;
+		}
+
 		//send current position to opponent(s)
-		if (myID == 1)
+		if (myID == 1 && msgReady == true)
 		{
 			Message msg;
-			msg.id = myID;
-			msg.x = myPlayer.GetPosition().x;
-			msg.y = myPlayer.GetPosition().y;
-			msg.timeSent = currentTime.asSeconds();
+			sf::Int8 id = myID;
+			float x = myPlayer.GetPosition().x;
+			float y = myPlayer.GetPosition().y;
+			float time = currentTime.asSeconds();
 			sf::Packet packet;
-			packet << msg.id << msg.x << msg.y << msg.timeSent;
+			packet << id<< x << y << time;
 
 			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
 			{
 				// error...
 				//send failed try it again
 				std::cout << "Send message failed" << std::endl;
+				counter;
+				counter = 0;
 			}
+			counter++;
 		}
 		else 
 		{
 			Message msg;
-			msg.id = myID;
-			msg.x = myPlayer.GetPosition().x;
-			msg.y = myPlayer.GetPosition().y;
-			msg.timeSent = currentTime.asSeconds();
+			sf::Int8 id = myID;
+			float x = myPlayer.GetPosition().x;
+			float y = myPlayer.GetPosition().y;
+			float time = currentTime.asSeconds();
 			sf::Packet packet;
-			packet << msg.id << msg.x << msg.y << msg.timeSent;
+			packet << id << x << y << time;
 
 			if (socket.send(packet, hostIP, hostPort) != sf::Socket::Done)
 			{
@@ -247,7 +262,7 @@ int main()
 		}
 
 		//check for messages received
-		if (myID == 1)
+		if (myID == 1 && msgReady == true)
 		{
 			sf::Int8 id;
 			float x;
@@ -268,6 +283,8 @@ int main()
 			msg.timeSent = time;
 
 			messages.push_back({ id, x, y, time });
+
+			msgReady = false;
 		}
 		else
 		{
@@ -290,6 +307,8 @@ int main()
 			msg.y = y;
 
 			messages.push_back({ id, x, y, time });
+
+			msgReady = false;
 		}
 
 		//give messages to appropriate players

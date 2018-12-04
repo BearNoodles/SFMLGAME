@@ -2,14 +2,15 @@
 m:\sfmltest\sfmlgame\sfmlgame\player.cpp(25): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
 m:\sfmltest\sfmlgame\sfmlgame\player.cpp(34): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 m:\sfmltest\sfmlgame\sfmlgame\player.cpp(35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(149): warning C4244: '=': conversion from 'const float' to 'int', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(150): warning C4244: '=': conversion from 'const float' to 'int', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(155): warning C4244: '+=': conversion from 'float' to 'int', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(156): warning C4244: '+=': conversion from 'float' to 'int', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(176): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(177): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(195): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(196): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(199): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(214): warning C4018: '<': signed/unsigned mismatch
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(155): warning C4244: '=': conversion from 'const float' to 'int', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(156): warning C4244: '=': conversion from 'const float' to 'int', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(177): warning C4244: '+=': conversion from 'float' to 'int', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(178): warning C4244: '+=': conversion from 'float' to 'int', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(182): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(183): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(201): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(202): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(205): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(211): warning C4018: '>=': signed/unsigned mismatch
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(220): warning C4018: '<': signed/unsigned mismatch
   SFMLGAME.vcxproj -> M:\SFMLTEST\SFMLGAME\Debug\SFMLGAME.exe
