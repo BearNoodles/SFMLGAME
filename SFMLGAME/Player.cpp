@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "Player.h"
 
 
@@ -130,6 +132,98 @@ sf::Vector2f Player::NormaliseVector2(sf::Vector2f vector, float speed)
 float Player::MagnitudeVector2(sf::Vector2f vector)
 {
 	return sqrt((vector.x * vector.x) + (vector.y * vector.y));
+}
+
+void Player::PredictPosition(float time) {
+	const int msize = m_messages.size();
+	std::assert(msize == m_reqMessages);
+	const Message& msg0 = m_messages[msize - 1];
+	const Message& msg1 = messages_[msize - 2];
+	const Message& msg2 = messages_[msize - 3];
+
+	// FIXME: Implement prediction here!
+	// You have:
+	// - the history of position messages received, in "messages_"
+	//   (msg0 is the most recent, msg1 the 2nd most recent, msg2 the 3rd most recent)
+	// - the current time, in "time"
+	// You need to update:
+	// - the predicted position at the current time, in "x_" and "y_"
+
+	x_ = msg0.x;
+	y_ = msg0.y;
+
+	//Linear prediction
+	float velx = (msg0.x - msg1.x) / (msg0.time - msg1.time);
+	float vely = (msg0.y - msg1.y) / (msg0.time - msg1.time);
+	x_ += velx * (time - msg0.time);
+	y_ += vely * (time - msg0.time);
+
+
+
+	//Quadratic prediction
+	//float velx0 = (msg0.x - msg1.x) / (msg0.time - msg1.time);
+	//float vely0 = (msg0.y - msg1.y) / (msg0.time - msg1.time);
+	//float velx1 = (msg1.x - msg2.x) / (msg1.time - msg2.time);
+	//float vely1 = (msg1.y - msg2.y) / (msg1.time - msg2.time);
+	//
+	//float accx = (velx0 - velx1) / (msg0.time - msg1.time);
+	//float accy = (vely0 - vely1) / (msg0.time - msg1.time);
+	//
+	//float dTime = time - msg0.time;
+	//
+	//x_ += (velx0 * dTime) + 0.5f * (accx * (dTime * dTime));
+	//y_ += (vely0 * dTime) + 0.5f * (accy * (dTime * dTime));
+
+	//Interpolated prediction
+	TankMessage newPrediction;
+	newPrediction.x = x_;
+	newPrediction.y = y_;
+	newPrediction.time = time;
+	newPrediction.id = msg0.id;
+	predictionHistory.push_back(newPrediction);
+
+	if (predictionHistory.size() == reqMessages)
+	{
+		const TankMessage& imsg0 = predictionHistory[reqMessages - 1];
+		const TankMessage& imsg1 = predictionHistory[reqMessages - 2];
+		const TankMessage& imsg2 = predictionHistory[reqMessages - 3];
+		float ix_ = imsg0.x;
+		float iy_ = imsg0.y;
+
+		float ivelx = (imsg0.x - imsg1.x) / (imsg0.time - imsg1.time);
+		float ively = (imsg0.y - imsg1.y) / (imsg0.time - imsg1.time);
+		ix_ += ivelx * (time - imsg0.time);
+		iy_ += ively * (time - imsg0.time);
+
+		x_ = (x_ - ix_) / 2;
+		y_ = (y_ - iy_) / 2;
+	}
+
+}
+void Player::AddMessage(const Message &message)
+{
+
+	if (m_messages.size() == m_reqMessages)
+	{
+		m_messages.erase(m_messages.begin());
+	}
+	m_messages.push_back(message);
+
+	//Sorts the messages based on the their time value. In case recieved out of order
+	if (m_messages.size() > 1)
+	{
+		for (int i = 0; i < m_messages.size() - 1; i++)
+		{
+			int x = i;
+			while (m_messages[i].timeSent > m_messages[i + 1].timeSent)
+			{
+				x++;
+				Message temp = m_messages[i];
+				m_messages[i] = m_messages[x];
+				m_messages[x] = temp;
+			}
+		}
+	}
 }
 
 Player::~Player()

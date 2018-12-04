@@ -48,17 +48,22 @@ c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(415): warning C4244: 
           [
               T=float
           ]
-c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(460): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(417): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
           with
           [
               T=float
           ]
-c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(469): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(462): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
           with
           [
               T=float
           ]
-c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(593): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(471): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(595): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
           with
           [
               T=float

@@ -12,6 +12,7 @@
 #include <string>
 
 #include "Player.h"
+#include "Message.h"
 
 #define MAXPLAYERS 8
 
@@ -59,6 +60,7 @@ sf::Vector2f ballStartPos(500, 400);
 int player1Score = 0;
 int player2Score = 0;
 
+std::list<Message> messages;
 
 sf::UdpSocket socket;
 sf::IpAddress hostIP = "127.0.0.1";
@@ -70,14 +72,14 @@ unsigned short clientPort;
 int main()
 {
 	socket.setBlocking(false);
-	playerColours = new sf::Color[MAXPLAYERS]{  sf::Color(255, 0, 0, 250),
-												sf::Color(255, 0, 0, 250),
-												sf::Color(255, 0, 0, 250),
-												sf::Color(255, 0, 0, 250),
-												sf::Color(255, 0, 0, 250),
-												sf::Color(255, 0, 0, 250),
-												sf::Color(255, 0, 0, 250),
-												sf::Color(255, 0, 0, 250) };
+	playerColours = new sf::Color[MAXPLAYERS]{  sf::Color(255, 0, 0, 255),
+												sf::Color(0, 0, 255, 255),
+												sf::Color(255, 0, 0, 255),
+												sf::Color(255, 0, 0, 255),
+												sf::Color(255, 0, 0, 255),
+												sf::Color(255, 0, 0, 255),
+												sf::Color(255, 0, 0, 255),
+												sf::Color(255, 0, 0, 255) };
 	
 
 	if (!font.loadFromFile("font.ttf"))
@@ -414,6 +416,8 @@ void InitClient()
 
 	sf::Vector2f startPos(playerCount * startPosX, startPosY);
 	myPlayer.Init(texture, startPos, playerColours[playerCount], playerCount);
+	startPos = sf::Vector2f((playerCount - 1) * startPosX, startPosY);
+	opponent.Init(texture, startPos, playerColours[playerCount - 1], playerCount - 1);
 
 }
 
@@ -562,7 +566,7 @@ bool WaitForPlayers()
 
 		if (packet >> greeting)
 		{
-			//
+			//good
 		}
 		else
 		{
@@ -590,7 +594,7 @@ bool WaitForPlayers()
 				break;
 			}
 			playerCount++;
-			sf::Vector2f startPos(startPosX * playerCount, startPosY * playerCount);
+			sf::Vector2f startPos(startPosX * playerCount, startPosY);
 			//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
 			//playerList.push_back(tempPlayer);
 

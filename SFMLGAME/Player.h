@@ -4,6 +4,10 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/Network.hpp>
+
+#include <vector>
+#include "Message.h"
+
 class Player
 {
 public:
@@ -26,6 +30,9 @@ public:
 
 	sf::Sprite GetSprite();
 
+	void PredictPosition(float time);
+	void AddMessage(const Message &msg);
+
 	sf::IpAddress GetIP();
 	void SetIP(sf::IpAddress IP);
 	unsigned short GetPort();
@@ -44,6 +51,10 @@ private:
 	float m_acceleration;
 	float DRAG = 1.0005f;
 
+	std::vector<Message> m_messages;
+	std::vector<Message> m_predictionHistory;
+
+	int m_reqMessages = 3;
 
 	sf::IpAddress m_IP;
 	unsigned short m_port;
