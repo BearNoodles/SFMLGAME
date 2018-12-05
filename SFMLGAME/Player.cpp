@@ -31,19 +31,22 @@ void Player::Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, 
 
 void Player::UpdateSelf(sf::Time time, sf::Time frameTime)
 {
+
+	m_acceleration = 10.025f * frameTime.asSeconds();
+
 	m_dir.x = sinf((3.14159 / 180) * m_sprite.getRotation());
 	m_dir.y = -cosf((3.14159 / 180) * m_sprite.getRotation());
 	m_dir = NormaliseVector2(m_dir, 0.1f);//unsure if need this
 
-	//TODO update controls
-	
+										  //TODO update controls
+
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 	{
-		m_sprite.rotate(-0.3f);
+		m_sprite.rotate(-100.3f * m_frameTime.asSeconds());
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 	{
-		m_sprite.rotate(0.3f);
+		m_sprite.rotate(100.3f * m_frameTime.asSeconds());
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 	{
@@ -59,27 +62,30 @@ void Player::UpdateSelf(sf::Time time, sf::Time frameTime)
 	}
 	else if (MagnitudeVector2(m_velocity) > 0)// && !sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 	{
-		m_velocity /= DRAG;
+		if (m_frameTime.asSeconds() != 0)
+		{
+			m_velocity /= DRAG * m_frameTime.asSeconds();
+		}
 	}
-	sf::Vector2f ne = m_velocity * time.asSeconds();
-	m_sprite.move(m_velocity * time.asSeconds() / 20.0f);
+
+	m_sprite.move(m_velocity);
 	m_position = m_sprite.getPosition();
 }
 
 void Player::UpdateOther(sf::Time time, sf::Time frameTime, bool newmsg)
 {
-	m_frameTime = frameTime;
-	if (newmsg)
-	{
-		//m_position = PredictPosition(time.asSeconds());
-	}
-	//TODO predict and set opponent velocity
-	PredictPosition(time.asSeconds());
-	m_sprite.move(m_velocity * time.asSeconds() / 20.0f);
-	m_position = m_sprite.getPosition();
+	//m_frameTime = frameTime;
+	//if (newmsg)
+	//{
+	//	//m_position = PredictPosition(time.asSeconds());
+	//}
+	////TODO predict and set opponent velocity
+	//PredictPosition(time.asSeconds());
+	//m_sprite.move(m_velocity * time.asSeconds() / 20.0f);
+	//m_position = m_sprite.getPosition();
 
-	//m_position = PredictPosition(time.asSeconds());
-	//m_sprite.setPosition(m_position);
+	m_position = PredictPosition(time.asSeconds());
+	m_sprite.setPosition(m_position);
 }
 
 int Player::GetID()
@@ -145,7 +151,7 @@ float Player::MagnitudeVector2(sf::Vector2f vector)
 	return sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
 
-sf::Vector2f Player::PredictPosition(float time) 
+sf::Vector2f Player::PredictPosition(float time)
 {
 	const int msize = m_messages.size();
 	//assert(msize == m_reqMessages);
@@ -163,13 +169,15 @@ sf::Vector2f Player::PredictPosition(float time)
 	x = msg0.x;
 	y = msg0.y;
 
+	//return sf::Vector2f(x, y);
+
 	//Linear prediction
 	float velx = (msg0.x - msg1.x) / (msg0.timeSent - msg1.timeSent);
 	float vely = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
 	x += velx * (time - msg0.timeSent);
 	y += vely * (time - msg0.timeSent);
 
-	m_velocity = (sf::Vector2f(x, y) + sf::Vector2f(velx, vely)) - m_position;
+	//m_velocity = (sf::Vector2f(x, y) + sf::Vector2f(velx, vely)) - m_position;
 
 	//Quadratic prediction
 	//float velx0 = (msg0.x - msg1.x) / (msg0.timeSent - msg1.timeSent);
@@ -184,7 +192,7 @@ sf::Vector2f Player::PredictPosition(float time)
 	//
 	//x += (velx0 * dTime) + 0.5f * (accx * (dTime * dTime));
 	//y += (vely0 * dTime) + 0.5f * (accy * (dTime * dTime));
-
+	//
 	//float velx = velx0;
 	//float vely = vely0;
 
@@ -217,7 +225,7 @@ sf::Vector2f Player::PredictPosition(float time)
 	//	iy += ively * (time - imsg0.timeSent);
 	//
 	//
-	//	m_velocity = sf::Vector2f(ivelx, ively);
+	//	//m_velocity = sf::Vector2f(ivelx, ively);
 	//	x = (x - ix) / 2;
 	//	y = (y - iy) / 2;
 	//}
@@ -241,7 +249,7 @@ void Player::AddMessage(const Message &message)
 		for (int i = 0; i < m_messages.size() - 1; i++)
 		{
 			int x = i;
-			while (m_messages[i].timeSent > m_messages[i + 1].timeSent)
+			while (m_messages[i].timeSent < m_messages[i + 1].timeSent)
 			{
 				x++;
 				Message temp = m_messages[i];

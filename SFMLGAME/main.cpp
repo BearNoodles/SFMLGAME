@@ -38,7 +38,6 @@ sf::Font font;
 sf::Texture texture;
 sf::Texture ballTexture;
 sf::Texture goalTexture;
-
 sf::Text text;
 
 Player myPlayer;
@@ -78,15 +77,15 @@ unsigned short clientPort;
 int main()
 {
 	socket.setBlocking(false);
-	playerColours = new sf::Color[MAXPLAYERS]{  sf::Color(255, 0, 0, 255),
-												sf::Color(0, 0, 255, 255),
-												sf::Color(255, 0, 0, 255),
-												sf::Color(255, 0, 0, 255),
-												sf::Color(255, 0, 0, 255),
-												sf::Color(255, 0, 0, 255),
-												sf::Color(255, 0, 0, 255),
-												sf::Color(255, 0, 0, 255) };
-	
+	playerColours = new sf::Color[MAXPLAYERS]{ sf::Color(255, 0, 0, 255),
+		sf::Color(0, 0, 255, 255),
+		sf::Color(255, 0, 0, 255),
+		sf::Color(255, 0, 0, 255),
+		sf::Color(255, 0, 0, 255),
+		sf::Color(255, 0, 0, 255),
+		sf::Color(255, 0, 0, 255),
+		sf::Color(255, 0, 0, 255) };
+
 
 	if (!font.loadFromFile("font.ttf"))
 	{
@@ -165,7 +164,7 @@ int main()
 
 	//Setup or join a game
 	HostOrClient();
-	
+
 
 
 	//Wait for players to join and for host to start game
@@ -193,10 +192,10 @@ int main()
 
 	/*for (auto player : playerList)
 	{
-		if (myID == player.GetID())
-		{
-			myPlayer = &player;
-		}
+	if (myID == player.GetID())
+	{
+	myPlayer = &player;
+	}
 	}*/
 	int currentPlayer = 0;
 	for (auto player : playerList)
@@ -216,7 +215,7 @@ int main()
 
 		messageTime = messageClock.getElapsedTime();
 
-		if (messageTime.asSeconds() > 0.1f)
+		if (messageTime.asSeconds() > 0.01f)
 		{
 			messageClock.restart();
 			msgReady = true;
@@ -231,7 +230,7 @@ int main()
 			float y = myPlayer.GetPosition().y;
 			float time = currentTime.asSeconds();
 			sf::Packet packet;
-			packet << id<< x << y << time;
+			packet << id << x << y << time;
 
 			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
 			{
@@ -243,7 +242,7 @@ int main()
 			}
 			counter++;
 		}
-		else if(msgReady == true)
+		else if (msgReady == true)
 		{
 			Message msg;
 			sf::Int8 id = myID;
@@ -261,21 +260,29 @@ int main()
 			}
 		}
 
+		bool check = true;;
 		//check for messages received
-		if (myID == 1 && msgReady == true)
+		if (myID == 1)
 		{
 			sf::Int8 id;
 			float x;
 			float y;
 			float timeSent;
 			sf::Packet packet;
-			if (socket.receive(packet, clientIP, clientPort) == sf::Socket::NotReady)
+			sf::IpAddress address;
+			unsigned short port;
+			if (socket.receive(packet, address, port) != sf::Socket::Done)
 			{
 				// error...
 				//recieve failed send hello again
 				//std::cout << "no messages yet" << std::endl;
+				check = false;
 			}
-			if (packet >> id >> x >> y >> timeSent)
+			if (address != clientIP || port != clientPort)
+			{
+				check == false;
+			}
+			if (packet >> id >> x >> y >> timeSent && check)
 			{
 				//good
 				Message msg;
@@ -287,25 +294,32 @@ int main()
 				messages.push_back(msg);
 
 			}
-			else
+			else if (check)
 			{
 				std::cout << "Couldnt receive message" << std::endl;
 			}
 		}
-		else if (msgReady == true)
+		else
 		{
 			sf::Int8 id;
 			float x;
 			float y;
 			float timeSent;
 			sf::Packet packet;
-			if (socket.receive(packet, hostIP, hostPort) == sf::Socket::NotReady)
+			sf::IpAddress address;
+			unsigned short port;
+			if (socket.receive(packet, address, port) != sf::Socket::Done)
 			{
 				// error...
 				//recieve failed send hello again
 				//std::cout << "no messages yet" << std::endl;
+				check = false;
 			}
-			if (packet >> id >> x >> y >> timeSent)
+			if (address != clientIP || port != clientPort)
+			{
+				check == false;
+			}
+			if (packet >> id >> x >> y >> timeSent && check)
 			{
 				//good
 				Message msg;
@@ -317,11 +331,11 @@ int main()
 				messages.push_back(msg);
 
 			}
-			else
+			else if (check)
 			{
 				std::cout << "Couldnt receive message" << std::endl;
 			}
-			
+
 		}
 
 		//give messages to appropriate players
@@ -352,12 +366,12 @@ int main()
 		}
 
 		int i = text.getString().getSize();
-		std::string str = "Score " + std::to_string(player1Score) + " - " + std::to_string(player2Score);
+		std::string str = std::to_string(myID) + " Score " + std::to_string(player1Score) + " - " + std::to_string(player2Score);
 		//text.setPosition((screenWidth / 2) - ((text.getString().getSize() * text.getCharacterSize()) / 2), 10);
 		text.setPosition((screenWidth / 2) - 100, 10);
-		
+
 		text.setString(str);
-		
+
 		for (auto player1 : playerList)
 		{
 			for (auto player2 : playerList)
@@ -396,7 +410,7 @@ int main()
 				}
 			}
 		}
-		
+
 		if (MagnitudeVector2(ballVelocity) > MAXSPEED)
 		{
 			ballVelocity = NormaliseVector2(ballVelocity, MAXSPEED);
@@ -422,7 +436,7 @@ int main()
 
 		myPlayer.UpdateSelf(currentTime, frameTime);
 		opponent.UpdateOther(currentTime, frameTime, msgReady);
-		
+
 		for (auto player : playerList)
 		{
 			if (player.GetID() == myID)
@@ -441,10 +455,10 @@ int main()
 
 		OutOfBounds();
 
-		
+
 		window.clear();
 		for (auto player : playerList)
-		{ 
+		{
 			std::cout << "x " << player.GetSprite().getPosition().x << " y " << player.GetSprite().getPosition().y << std::endl;
 			window.draw(player.GetSprite());
 		}
@@ -524,7 +538,7 @@ void InitClient()
 	{
 		std::string r;
 		sf::Packet packet;
-		if (socket.receive(packet, hostIP, hostPort) == sf::Socket::NotReady)
+		if (socket.receive(packet, hostIP, hostPort) != sf::Socket::Done)
 		{
 			// error...
 			//receive failed send hello again
@@ -588,13 +602,13 @@ void Reset()
 void OutOfBounds()
 {
 	//check who is out of bounds
-		//for (auto player : playerList)
-		//{
-		//	if (player.GetSprite.GetPosition().x > screenWidth)
-		//	{
-		//		player.GetSprite.SetPosition(0.0f, player.GetSprite.GetPosition().y);
-		//	}
-		//}
+	//for (auto player : playerList)
+	//{
+	//	if (player.GetSprite.GetPosition().x > screenWidth)
+	//	{
+	//		player.GetSprite.SetPosition(0.0f, player.GetSprite.GetPosition().y);
+	//	}
+	//}
 
 	//only check if self is out of bounds
 	if (myPlayer.GetPosition().x > screenWidth)
@@ -673,7 +687,7 @@ void HostOrClient()
 
 bool WaitForPlayers()
 {
-	
+
 	//TODO draw other players while waiting
 	if (myID == 1)
 	{
@@ -698,7 +712,7 @@ bool WaitForPlayers()
 		sf::Packet packet;
 		std::string greeting;
 
-		if (socket.receive(packet, senderIP, senderPort) == sf::Socket::NotReady)
+		if (socket.receive(packet, senderIP, senderPort) != sf::Socket::Done)
 		{
 			// error...
 			//recieve failed send hello again
@@ -750,7 +764,7 @@ bool WaitForPlayers()
 		unsigned short hostPort;
 		sf::Packet packet;
 		std::string beginMessage;
-		if (socket.receive(packet, hostIP, hostPort) == sf::Socket::NotReady)
+		if (socket.receive(packet, hostIP, hostPort) != sf::Socket::Done)
 		{
 			// error...
 			//recieve failed send hello again

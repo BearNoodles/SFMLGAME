@@ -1,7 +1,7 @@
 ﻿  Player.cpp
 m:\sfmltest\sfmlgame\sfmlgame\player.cpp(25): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(34): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(232): warning C4018: '>=': signed/unsigned mismatch
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(241): warning C4018: '<': signed/unsigned mismatch
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(37): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(38): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(240): warning C4018: '>=': signed/unsigned mismatch
+m:\sfmltest\sfmlgame\sfmlgame\player.cpp(249): warning C4018: '<': signed/unsigned mismatch
   SFMLGAME.vcxproj -> M:\SFMLTEST\SFMLGAME\Debug\SFMLGAME.exe
