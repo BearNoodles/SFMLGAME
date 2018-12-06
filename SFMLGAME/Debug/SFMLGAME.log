@@ -1,7 +1,75 @@
-﻿  Player.cpp
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(25): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(37): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(38): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(240): warning C4018: '>=': signed/unsigned mismatch
-m:\sfmltest\sfmlgame\sfmlgame\player.cpp(249): warning C4018: '<': signed/unsigned mismatch
-  SFMLGAME.vcxproj -> M:\SFMLTEST\SFMLGAME\Debug\SFMLGAME.exe
+﻿  main.cpp
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(127): warning C4244: 'argument': conversion from 'size_t' to 'float', possible loss of data
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(134): warning C4244: 'argument': conversion from 'T' to 'T', possible loss of data
+          with
+          [
+              T=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(140): warning C4244: 'argument': conversion from 'T' to 'T', possible loss of data
+          with
+          [
+              T=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(146): warning C4244: 'argument': conversion from 'T' to 'T', possible loss of data
+          with
+          [
+              T=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(204): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(286): warning C4553: '==': result of expression not used; did you intend '='?
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(327): warning C4553: '==': result of expression not used; did you intend '='?
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(379): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(230): warning C4101: 'msg': unreferenced local variable
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(247): warning C4101: 'msg': unreferenced local variable
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(512): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(575): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(581): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(583): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(628): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(637): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\daryl\desktop\sfmltest\sfmlgame\sfmlgame\main.cpp(761): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+  SFMLGAME.vcxproj -> C:\Users\Daryl\Desktop\SFMLTEST\SFMLGAME\Debug\SFMLGAME.exe

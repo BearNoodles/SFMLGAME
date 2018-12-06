@@ -6,9 +6,7 @@
 
 Player::Player()
 {
-	m_acceleration = 0.025f;
-	m_velocity = sf::Vector2f(1, 0);
-
+	m_velocity = sf::Vector2f(0, 0);
 }
 
 void Player::Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, int ID)
@@ -31,8 +29,8 @@ void Player::Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, 
 
 void Player::UpdateSelf(sf::Time time, sf::Time frameTime)
 {
-
-	m_acceleration = 10.025f * frameTime.asSeconds();
+	MAXSPEED2 = MAXSPEED * frameTime.asSeconds();
+	m_acceleration = 20.025f * frameTime.asSeconds();
 
 	m_dir.x = sinf((3.14159 / 180) * m_sprite.getRotation());
 	m_dir.y = -cosf((3.14159 / 180) * m_sprite.getRotation());
@@ -42,37 +40,36 @@ void Player::UpdateSelf(sf::Time time, sf::Time frameTime)
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 	{
-		m_sprite.rotate(-100.3f * m_frameTime.asSeconds());
+		m_sprite.rotate(-100.3f * frameTime.asSeconds());
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 	{
-		m_sprite.rotate(100.3f * m_frameTime.asSeconds());
+		m_sprite.rotate(100.3f * frameTime.asSeconds());
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 	{
-		if (MagnitudeVector2(m_velocity) < MAXSPEED)
+		if (MagnitudeVector2(m_velocity) < MAXSPEED2)
 		{
 			m_velocity += m_dir * m_acceleration;
 		}
 	}
 
-	if (MagnitudeVector2(m_velocity) > MAXSPEED)
+	if (MagnitudeVector2(m_velocity) > MAXSPEED2)
 	{
-		m_velocity = NormaliseVector2(m_velocity, MAXSPEED);
+		m_velocity = NormaliseVector2(m_velocity, MAXSPEED2);
 	}
 	else if (MagnitudeVector2(m_velocity) > 0)// && !sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 	{
-		if (m_frameTime.asSeconds() != 0)
+		if (frameTime.asSeconds() != 0)
 		{
-			m_velocity /= DRAG * m_frameTime.asSeconds();
+			//m_velocity /= DRAG;
 		}
 	}
-
-	m_sprite.move(m_velocity);
-	m_position = m_sprite.getPosition();
+	m_position += m_velocity;
+	m_sprite.setPosition(m_position);
 }
 
-void Player::UpdateOther(sf::Time time, sf::Time frameTime, bool newmsg)
+void Player::UpdateOther(sf::Time time, sf::Time frameTime)
 {
 	//m_frameTime = frameTime;
 	//if (newmsg)
@@ -248,13 +245,13 @@ void Player::AddMessage(const Message &message)
 	{
 		for (int i = 0; i < m_messages.size() - 1; i++)
 		{
-			int x = i;
-			while (m_messages[i].timeSent < m_messages[i + 1].timeSent)
+			int t = i;
+			while (m_messages[i].timeSent > m_messages[i + 1].timeSent)
 			{
-				x++;
+				t++;
 				Message temp = m_messages[i];
-				m_messages[i] = m_messages[x];
-				m_messages[x] = temp;
+				m_messages[i] = m_messages[t];
+				m_messages[t] = temp;
 			}
 		}
 	}

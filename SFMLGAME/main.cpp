@@ -205,7 +205,6 @@ int main()
 		player.Init(texture, startPos, playerColours[currentPlayer], currentPlayer);
 	}
 
-	int counter = 0;
 	msgReady = false;
 	while (window.isOpen())
 	{
@@ -228,19 +227,16 @@ int main()
 			sf::Int8 id = myID;
 			float x = myPlayer.GetPosition().x;
 			float y = myPlayer.GetPosition().y;
-			float time = currentTime.asSeconds();
+			float timeSent = currentTime.asSeconds();
 			sf::Packet packet;
-			packet << id << x << y << time;
+			packet << id << x << y << timeSent;
 
 			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
 			{
 				// error...
 				//send failed try it again
 				std::cout << "Send message failed" << std::endl;
-				counter;
-				counter = 0;
 			}
-			counter++;
 		}
 		else if (msgReady == true)
 		{
@@ -248,9 +244,9 @@ int main()
 			sf::Int8 id = myID;
 			float x = myPlayer.GetPosition().x;
 			float y = myPlayer.GetPosition().y;
-			float time = currentTime.asSeconds();
+			float timeSent = currentTime.asSeconds();
 			sf::Packet packet;
-			packet << id << x << y << time;
+			packet << id << x << y << timeSent;
 
 			if (socket.send(packet, hostIP, hostPort) != sf::Socket::Done)
 			{
@@ -264,76 +260,84 @@ int main()
 		//check for messages received
 		if (myID == 1)
 		{
-			sf::Int8 id;
-			float x;
-			float y;
-			float timeSent;
-			sf::Packet packet;
-			sf::IpAddress address;
-			unsigned short port;
-			if (socket.receive(packet, address, port) != sf::Socket::Done)
+			while (true)
 			{
-				// error...
-				//recieve failed send hello again
-				//std::cout << "no messages yet" << std::endl;
-				check = false;
-			}
-			if (address != clientIP || port != clientPort)
-			{
-				check == false;
-			}
-			if (packet >> id >> x >> y >> timeSent && check)
-			{
-				//good
-				Message msg;
-				msg.id = id;
-				msg.x = x;
-				msg.y = y;
-				msg.timeSent = timeSent;
+				sf::Int8 id;
+				float x;
+				float y;
+				float timeSent;
+				sf::Packet packet;
+				sf::IpAddress address;
+				unsigned short port;
+				if (socket.receive(packet, address, port) != sf::Socket::Done)
+				{
+					// error...
+					//recieve failed send hello again
+					//std::cout << "no messages yet" << std::endl;
+					check = false;
+					break;
+				}
+				if (address != clientIP || port != clientPort)
+				{
+					check == false;
+				}
+				if ((packet >> id >> x >> y >> timeSent) && check)
+				{
+					//good
+					Message msg;
+					msg.id = id;
+					msg.x = x;
+					msg.y = y;
+					msg.timeSent = timeSent;
 
-				messages.push_back(msg);
+					messages.push_back(msg);
 
-			}
-			else if (check)
-			{
-				std::cout << "Couldnt receive message" << std::endl;
+				}
+				else if (check)
+				{
+					std::cout << "Couldnt receive message" << std::endl;
+				}
 			}
 		}
 		else
 		{
-			sf::Int8 id;
-			float x;
-			float y;
-			float timeSent;
-			sf::Packet packet;
-			sf::IpAddress address;
-			unsigned short port;
-			if (socket.receive(packet, address, port) != sf::Socket::Done)
+			while (true)
 			{
-				// error...
-				//recieve failed send hello again
-				//std::cout << "no messages yet" << std::endl;
-				check = false;
-			}
-			if (address != clientIP || port != clientPort)
-			{
-				check == false;
-			}
-			if (packet >> id >> x >> y >> timeSent && check)
-			{
-				//good
-				Message msg;
-				msg.id = id;
-				msg.x = x;
-				msg.y = y;
-				msg.timeSent = timeSent;
+				sf::Int8 id;
+				float x;
+				float y;
+				float timeSent;
+				sf::Packet packet;
+				sf::IpAddress address;
+				unsigned short port;
+				if (socket.receive(packet, address, port) != sf::Socket::Done)
+				{
+					// error...
+					//recieve failed send hello again
+					//std::cout << "no messages yet" << std::endl;
+					check = false;
+					break;
+				}
+				if (address != hostIP || port != hostPort)
+				{
+					check == false;
+				}
+				if ((packet >> id >> x >> y >> timeSent) && check)
+				{
+					//good
+					Message msg;
+					msg.id = id;
+					msg.x = x;
+					msg.y = y;
+					msg.timeSent = timeSent;
 
-				messages.push_back(msg);
+					messages.push_back(msg);
 
-			}
-			else if (check)
-			{
-				std::cout << "Couldnt receive message" << std::endl;
+				}
+				else if (check)
+				{
+					std::cout << "Couldnt receive message" << std::endl;
+				}
 			}
 
 		}
@@ -435,19 +439,19 @@ int main()
 		}
 
 		myPlayer.UpdateSelf(currentTime, frameTime);
-		opponent.UpdateOther(currentTime, frameTime, msgReady);
+		opponent.UpdateOther(currentTime, frameTime);
 
-		for (auto player : playerList)
-		{
-			if (player.GetID() == myID)
-			{
-				player.UpdateSelf(currentTime, frameTime);
-			}
-			else
-			{
-				player.UpdateOther(currentTime, frameTime, msgReady);
-			}
-		}
+		//for (auto player : playerList)
+		//{
+		//	if (player.GetID() == myID)
+		//	{
+		//		player.UpdateSelf(currentTime, frameTime);
+		//	}
+		//	else
+		//	{
+		//		player.UpdateOther(currentTime, frameTime);
+		//	}
+		//}
 		if (msgReady)
 		{
 			msgReady = false;

@@ -17,7 +17,7 @@ public:
 	void Init(sf::Texture texture, sf::Vector2f startPos, sf::Color colour, int ID);
 
 	void UpdateSelf(sf::Time time, sf::Time frameTime);
-	void UpdateOther(sf::Time time, sf::Time frameTime, bool newmsg);
+	void UpdateOther(sf::Time time, sf::Time frameTime);
 
 	int GetID();
 	void SetID(int id);
@@ -47,11 +47,12 @@ private:
 	sf::Vector2f m_velocity;
 	sf::Vector2f m_scale = sf::Vector2f(0.03f, 0.03f);
 	sf::Vector2f m_dir;
-	float MAXSPEED = 1.0f;
+	float MAXSPEED = 100.0f;
+	float MAXSPEED2;
 	float m_acceleration;
 	float DRAG = 1.0005f;
 
-	sf::Time m_frameTime;
+	//sf::Time m_frameTime;
 
 	std::vector<Message> m_messages;
 	std::vector<Message> m_predictionHistory;
