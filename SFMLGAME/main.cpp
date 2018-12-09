@@ -12,6 +12,7 @@
 #include <string>
 
 #include "Player.h"
+#include "Ball.h"
 #include "Message.h"
 
 #define MAXPLAYERS 8
@@ -23,15 +24,17 @@ void Init();
 void HostOrClient();
 bool WaitForPlayers();
 void OutOfBounds();
+void CheckCollisions();
+void Goal(int score1, int score2);
 sf::Vector2f NormaliseVector2(sf::Vector2f vector, float speed = 1);
 float MagnitudeVector2(sf::Vector2f vector);
 void Reset();
 
-sf::Vector2f ballVelocity;
+
 int screenWidth = 1000;
 int screenHeight = 600;
 float MAXSPEED = 2.0f;
-float acceleration = 0.025f;
+//float acceleration = 0.025f;
 
 sf::Font font;
 
@@ -42,9 +45,11 @@ sf::Text text;
 
 Player myPlayer;
 Player opponent;
+Ball ball;
 std::list<Player> playerList;
 int playerCount;
 int myID;
+int ballID;
 sf::Color* playerColours;
 int startPosX = 100;
 int startPosY = 100;
@@ -56,7 +61,6 @@ bool msgReady;
 
 sf::Sprite goal1;
 sf::Sprite goal2;
-sf::Sprite ball;
 
 sf::Vector2f goal1StartPos(800, 300);
 sf::Vector2f goal2StartPos(200, 300);
@@ -85,6 +89,8 @@ int main()
 		sf::Color(255, 0, 0, 255),
 		sf::Color(255, 0, 0, 255),
 		sf::Color(255, 0, 0, 255) };
+
+	sf::Color ballColour(255, 255, 255);
 
 
 	if (!font.loadFromFile("font.ttf"))
@@ -139,17 +145,17 @@ int main()
 	goal2.setColor(sf::Color(255, 0, 0, 250));
 	goal2.setOrigin(sf::Vector2f(goalTexture.getSize().x / 2, goalTexture.getSize().y / 2));
 
-	ball.setTexture(ballTexture);
-	ball.setPosition(ballStartPos);
-	ball.setScale(sf::Vector2f(0.2f, 0.2f));
-	ball.setColor(sf::Color(255, 255, 255, 255));
-	ball.setOrigin(sf::Vector2f(ballTexture.getSize().x / 2, ballTexture.getSize().y / 2));
+	//ball.setTexture(ballTexture);
+	//ball.setPosition(ballStartPos);
+	//ball.setScale(sf::Vector2f(0.2f, 0.2f));
+	//ball.setColor(sf::Color(255, 255, 255, 255));
+	//ball.setOrigin(sf::Vector2f(ballTexture.getSize().x / 2, ballTexture.getSize().y / 2));
+	ballID = 0;
 
 	//sf::CircleShape ball(100.f);
 	//ball.setTexture(&ballTexture,false);
 	//ball.setPosition(500, 400);
 
-	ballVelocity = sf::Vector2f(0, 0);
 
 	sf::Clock timerClock; // starts the clock
 	sf::Clock frameClock; // starts the clock
@@ -159,6 +165,10 @@ int main()
 	sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML works!");
 	window.setKeyRepeatEnabled(false);
 	window.setFramerateLimit(FPS);
+
+
+	ball.Init(ballTexture, ballStartPos, ballColour, screenWidth, screenHeight, ballID);
+
 	//window.setPosition(sf::Vector2i(500, 50));
 	//window.setJoystickThreshold(100);
 
@@ -185,7 +195,7 @@ int main()
 		window.draw(myPlayer.GetSprite());
 		window.draw(goal1);
 		window.draw(goal2);
-		window.draw(ball);
+		window.draw(ball.GetSprite());
 		window.draw(text);
 		window.display();
 	}
@@ -232,6 +242,21 @@ int main()
 			packet << id << x << y << timeSent;
 
 			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
+			{
+				// error...
+				//send failed try it again
+				std::cout << "Send message failed" << std::endl;
+			}
+
+			Message msg2;
+			sf::Int8 id2 = ballID;
+			float x2 = ball.GetPosition().x;
+			float y2 = ball.GetPosition().y;
+			float timeSent2 = currentTime.asSeconds();
+			sf::Packet packet2;
+			packet2 << id2 << x2 << y2 << timeSent2;
+
+			if (socket.send(packet2, clientIP, clientPort) != sf::Socket::Done)
 			{
 				// error...
 				//send failed try it again
@@ -303,6 +328,7 @@ int main()
 		{
 			while (true)
 			{
+				//Recieve player position
 				sf::Int8 id;
 				float x;
 				float y;
@@ -338,6 +364,45 @@ int main()
 				{
 					std::cout << "Couldnt receive message" << std::endl;
 				}
+
+
+				check = true;
+				//Recieve ball position
+				sf::Int8 id2;
+				float x2;
+				float y2;
+				float timeSent2;
+				sf::Packet packet2;
+				sf::IpAddress address2;
+				unsigned short port2;
+				if (socket.receive(packet2, address2, port2) != sf::Socket::Done)
+				{
+					// error...
+					//recieve failed send hello again
+					//std::cout << "no messages yet" << std::endl;
+					check = false;
+					break;
+				}
+				if (address2 != hostIP || port2 != hostPort)
+				{
+					check == false;
+				}
+				if ((packet2 >> id2 >> x2 >> y2 >> timeSent2) && check)
+				{
+					//good
+					Message msg2;
+					msg2.id = id2;
+					msg2.x = x2;
+					msg2.y = y2;
+					msg2.timeSent = timeSent;
+
+					messages.push_back(msg2);
+
+				}
+				else if (check)
+				{
+					std::cout << "Couldnt receive message" << std::endl;
+				}
 			}
 
 		}
@@ -348,6 +413,37 @@ int main()
 			if (messages.front().id == opponent.GetID())
 			{
 				opponent.AddMessage(messages.front());
+				messages.pop_front();
+			}
+			else if (messages.front().id == ballID && myID != 1)
+			{
+				ball.AddMessage(messages.front());
+				messages.pop_front();
+			}
+			else if (messages.front().id == -1 && myID != 1)
+			{
+				while (true)
+				{
+					Message msg;
+					sf::Int8 id = -1;
+					float x = 0;
+					float y = 0;
+					float timeSent = 0;
+					sf::Packet packet;
+					packet << id << x << y << timeSent;
+
+					if (socket.send(packet, hostIP, hostPort) != sf::Socket::Done)
+					{
+						// error...
+						//send failed try it again
+						std::cout << "Send message failed" << std::endl;
+						continue;
+					}
+					break;
+				}
+				player1Score += messages.front().x;
+				player2Score += messages.front().y;
+				Reset();
 				messages.pop_front();
 			}
 			else
@@ -376,67 +472,16 @@ int main()
 
 		text.setString(str);
 
-		for (auto player1 : playerList)
+		if (myID == 1)
 		{
-			for (auto player2 : playerList)
-			{
-				if (player1.GetID() == player2.GetID())
-				{
-					continue;
-				}
-				if (player1.GetSprite().getGlobalBounds().intersects(player2.GetSprite().getGlobalBounds()))
-				{
-					float totalSpeed = MagnitudeVector2(player1.GetVelocity()) + MagnitudeVector2(player2.GetVelocity());
-					sf::Vector2f dir1 = NormaliseVector2(player1.GetSprite().getPosition() - player2.GetSprite().getPosition());
-					//sf::Vector2f dir2 = NormaliseVector2(player2.getPosition()) - NormaliseVector2(player1.getPosition());
-					sf::Vector2f dir2 = -dir1;
-					player1.SetVelocity(dir1 * (totalSpeed / 2));
-					player2.SetVelocity(dir2 * (totalSpeed / 2));
-
-					//vel2 = sf::Vector2f(0.0f, 1.0f);
-				}
-			}
-
-			//check if any player collided with ball
-			if (player1.GetSprite().getGlobalBounds().intersects(ball.getGlobalBounds()))
-			{
-				float totalSpeed = MagnitudeVector2(player1.GetVelocity()) + MagnitudeVector2(ballVelocity);
-				sf::Vector2f pdir = NormaliseVector2(player1.GetSprite().getPosition() - ball.getPosition());
-				sf::Vector2f bdir = -pdir;
-				sf::Vector2f newVel = pdir * (totalSpeed / 4);
-
-				player1.SetVelocity(sf::Vector2f((player1.GetVelocity().x + newVel.x) / 2, (player1.GetVelocity().y + newVel.y) / 2));
-				ballVelocity = bdir * (totalSpeed * 3 / 4);
-
-				if (MagnitudeVector2(ballVelocity) == 0)
-				{
-					ballVelocity = bdir / 5.0f;
-				}
-			}
+			CheckCollisions();
+			ball.UpdateHost(currentTime, frameTime);
+		}
+		else
+		{
+			ball.UpdateClient(currentTime, frameTime);
 		}
 
-		if (MagnitudeVector2(ballVelocity) > MAXSPEED)
-		{
-			ballVelocity = NormaliseVector2(ballVelocity, MAXSPEED);
-		}
-		else if (MagnitudeVector2(ballVelocity) > 0)
-		{
-			ballVelocity /= 1.0003f;
-		}
-
-		ball.move(ballVelocity);
-
-
-		if (ball.getGlobalBounds().intersects(goal1.getGlobalBounds()))
-		{
-			player1Score++;
-			//Reset();
-		}
-		else if (ball.getGlobalBounds().intersects(goal2.getGlobalBounds()))
-		{
-			player2Score++;
-			//Reset();
-		}
 
 		myPlayer.UpdateSelf(currentTime, frameTime);
 		opponent.UpdateOther(currentTime, frameTime);
@@ -471,7 +516,7 @@ int main()
 		window.draw(myPlayer.GetSprite());
 		window.draw(goal1);
 		window.draw(goal2);
-		window.draw(ball);
+		window.draw(ball.GetSprite());
 		window.draw(text);
 		window.display();
 	}
@@ -588,13 +633,17 @@ void Init()
 
 void Reset()
 {
-	//player1.setPosition(player1StartPos);
+	myPlayer.SetPosition(sf::Vector2f(startPosX * myID, startPosY * myID));
+	ball.SetPosition(ballStartPos);
+
+	myPlayer.SetVelocity(sf::Vector2f(0,0));
+	opponent.SetVelocity(sf::Vector2f(0,0));
+	ball.SetVelocity(sf::Vector2f(0,0));
 	//player2.setPosition(player2StartPos);
 	//
 	//goal1.setPosition(goal1StartPos);
 	//goal2.setPosition(goal2StartPos);
 	//
-	//ball.setPosition(ballStartPos);
 	//
 	//vel1 = sf::Vector2f(0, 0);
 	//vel2 = sf::Vector2f(0, 0);
@@ -633,39 +682,7 @@ void OutOfBounds()
 		myPlayer.SetPosition(sf::Vector2f(myPlayer.GetPosition().x, screenHeight));
 	}
 
-	//check if ball touched edges //Maybe only for host?
-	if (ball.getPosition().x > screenWidth)
-	{
-		ballVelocity.x *= -1;
-		if (ballVelocity.x >= 0)
-		{
-			ballVelocity.x = -0.1f;
-		}
-	}
-	if (ball.getPosition().x < 0)
-	{
-		ballVelocity.x *= -1;
-		if (ballVelocity.x <= 0)
-		{
-			ballVelocity.x = 0.1f;
-		}
-	}
-	if (ball.getPosition().y > screenHeight)
-	{
-		ballVelocity.y *= -1;
-		if (ballVelocity.y >= 0)
-		{
-			ballVelocity.y = -0.1f;
-		}
-	}
-	if (ball.getPosition().y < 0)
-	{
-		ballVelocity.y *= -1;
-		if (ballVelocity.y <= 0)
-		{
-			ballVelocity.y = 0.1f;
-		}
-	}
+	
 }
 
 void HostOrClient()
@@ -783,4 +800,148 @@ bool WaitForPlayers()
 		}
 	}
 	return false;
+}
+
+void CheckCollisions()
+{
+	if (myPlayer.GetSprite().getGlobalBounds().intersects(opponent.GetSprite().getGlobalBounds()))
+	{
+		float totalSpeed = MagnitudeVector2(myPlayer.GetVelocity()) + MagnitudeVector2(opponent.GetVelocity());
+		sf::Vector2f dir1 = NormaliseVector2(myPlayer.GetSprite().getPosition() - opponent.GetSprite().getPosition());
+		//sf::Vector2f dir2 = NormaliseVector2(player2.getPosition()) - NormaliseVector2(player1.getPosition());
+		sf::Vector2f dir2 = -dir1;
+		myPlayer.SetVelocity(dir1 * (totalSpeed / 2));
+		//opponent.SetVelocity(dir2 * (totalSpeed / 2));
+
+		//vel2 = sf::Vector2f(0.0f, 1.0f);
+	}
+
+	if (myID != 1)
+	{
+		return;
+	}
+
+		//check if any player collided with ball
+	if (myPlayer.GetSprite().getGlobalBounds().intersects(ball.GetSprite().getGlobalBounds()))
+	{
+		sf::Vector2f ballVelocity = ball.GetVelocity();
+		float totalSpeed = MagnitudeVector2(myPlayer.GetVelocity()) + MagnitudeVector2(ballVelocity);
+		sf::Vector2f pdir = NormaliseVector2(myPlayer.GetSprite().getPosition() - ball.GetSprite().getPosition());
+		sf::Vector2f bdir = -pdir;
+		sf::Vector2f newVel = pdir * (totalSpeed / 4);
+
+		myPlayer.SetVelocity(sf::Vector2f((myPlayer.GetVelocity().x + newVel.x) / 2, (myPlayer.GetVelocity().y + newVel.y) / 2));
+		ballVelocity = bdir * (totalSpeed * 3 / 4);
+
+		if (MagnitudeVector2(ballVelocity) == 0)
+		{
+			ballVelocity = bdir / 5.0f;
+		}
+
+		ball.SetVelocity(ballVelocity);
+	}
+
+	
+
+	//Only host past this point
+
+	else if (opponent.GetSprite().getGlobalBounds().intersects(ball.GetSprite().getGlobalBounds()))
+	{
+		sf::Vector2f ballVelocity = ball.GetVelocity();
+		float totalSpeed = MagnitudeVector2(opponent.GetVelocity()) + MagnitudeVector2(ballVelocity);
+		sf::Vector2f pdir = NormaliseVector2(opponent.GetSprite().getPosition() - ball.GetSprite().getPosition());
+		sf::Vector2f bdir = -pdir;
+		sf::Vector2f newVel = pdir * (totalSpeed / 4);
+
+		opponent.SetVelocity(sf::Vector2f((opponent.GetVelocity().x + newVel.x) / 2, (opponent.GetVelocity().y + newVel.y) / 2));
+		ballVelocity = bdir * (totalSpeed * 3 / 4);
+
+		if (MagnitudeVector2(ballVelocity) == 0)
+		{
+			ballVelocity = bdir / 5.0f;
+		}
+
+		ball.SetVelocity(ballVelocity);
+	}
+
+	if (ball.GetSprite().getGlobalBounds().intersects(goal1.getGlobalBounds()))
+	{
+		Goal(1, 0);
+		Reset();
+	}
+	else if (ball.GetSprite().getGlobalBounds().intersects(goal2.getGlobalBounds()))
+	{
+		Goal(0, 1);
+		Reset();
+	}
+	
+}
+
+void Goal(int score1, int score2)
+{
+	while (true)
+	{
+		player1Score += score1;
+		player2Score += score2;
+		Message msg;
+		sf::Int8 id = -1;
+		float player1 = score1;
+		float player2 = score2;
+		float timeSent = 0;
+		sf::Packet packet;
+		packet << id << player1 << player2 << timeSent;
+
+		if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
+		{
+			// error...
+			//send failed try it again
+			std::cout << "Send message failed" << std::endl;
+			continue;
+		}
+		break;
+	}
+
+	while (true)
+	{
+		bool check = true;
+		sf::Int8 id;
+		float x;
+		float y;
+		float timeSent;
+		sf::Packet packet;
+		sf::IpAddress address;
+		unsigned short port;
+		if (socket.receive(packet, address, port) != sf::Socket::Done)
+		{
+			// error...
+			//recieve failed send hello again
+			//std::cout << "no messages yet" << std::endl;
+			check = false;
+			continue;
+		}
+		if (address != clientIP || port != clientPort)
+		{
+			check == false;
+		}
+		if ((packet >> id >> x >> y >> timeSent) && check)
+		{
+			//good
+			Message msg;
+			msg.id = id;
+			msg.x = x;
+			msg.y = y;
+			msg.timeSent = timeSent;
+
+			if (msg.id == -1 && msg.x == 0 && msg.y == 0 && msg.timeSent == 0)
+			{
+				break;
+			}
+
+		}
+		else if (check)
+		{
+			std::cout << "Couldnt receive message" << std::endl;
+		}
+	}
+	Reset();
 }
