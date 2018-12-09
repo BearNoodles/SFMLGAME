@@ -446,6 +446,11 @@ int main()
 				Reset();
 				messages.pop_front();
 			}
+			else if (messages.front().id == -2 && myID == 1)
+			{
+				ball.SetVelocity(sf::Vector2f(messages.front().x, messages.front().y));
+				messages.pop_front();
+			}
 			else
 			{
 				messages.pop_front();
@@ -474,7 +479,6 @@ int main()
 
 		if (myID == 1)
 		{
-			CheckCollisions();
 			ball.UpdateHost(currentTime, frameTime);
 		}
 		else
@@ -483,6 +487,7 @@ int main()
 		}
 
 
+		CheckCollisions();
 		myPlayer.UpdateSelf(currentTime, frameTime);
 		opponent.UpdateOther(currentTime, frameTime);
 
@@ -497,10 +502,7 @@ int main()
 		//		player.UpdateOther(currentTime, frameTime);
 		//	}
 		//}
-		if (msgReady)
-		{
-			msgReady = false;
-		}
+		msgReady = false;
 
 		OutOfBounds();
 
@@ -818,8 +820,45 @@ void CheckCollisions()
 
 	if (myID != 1)
 	{
+		if (myPlayer.GetSprite().getGlobalBounds().intersects(ball.GetSprite().getGlobalBounds()))
+		{
+			
+			sf::Vector2f ballVelocity = ball.GetVelocity();
+			float totalSpeed = MagnitudeVector2(myPlayer.GetVelocity()) + MagnitudeVector2(ballVelocity);
+			sf::Vector2f pdir = NormaliseVector2(myPlayer.GetSprite().getPosition() - ball.GetSprite().getPosition());
+			sf::Vector2f bdir = -pdir;
+			sf::Vector2f newVel = pdir * (totalSpeed / 4);
+
+			myPlayer.SetVelocity(sf::Vector2f((myPlayer.GetVelocity().x + newVel.x) / 2, (myPlayer.GetVelocity().y + newVel.y) / 2));
+			ballVelocity = bdir * (totalSpeed * 3 / 4);
+			
+			if (MagnitudeVector2(ballVelocity) == 0)
+			{
+				ballVelocity = bdir / 5.0f;
+			}
+
+			//ball.SetVelocity(ballVelocity);
+
+			//Tell host you hit the ball
+			Message msg;
+			sf::Int8 id = -2;
+			float x = ballVelocity.x;
+			float y = ballVelocity.y;
+			float timeSent = currentTime.asSeconds();
+			sf::Packet packet;
+			packet << id << x << y << timeSent;
+
+			if (socket.send(packet, hostIP, hostPort) != sf::Socket::Done)
+			{
+				// error...
+				//send failed try it again
+				std::cout << "Send message failed" << std::endl;
+			}
+		}
 		return;
 	}
+
+	//Only host past this point
 
 		//check if any player collided with ball
 	if (myPlayer.GetSprite().getGlobalBounds().intersects(ball.GetSprite().getGlobalBounds()))
@@ -841,28 +880,25 @@ void CheckCollisions()
 		ball.SetVelocity(ballVelocity);
 	}
 
-	
 
-	//Only host past this point
-
-	else if (opponent.GetSprite().getGlobalBounds().intersects(ball.GetSprite().getGlobalBounds()))
-	{
-		sf::Vector2f ballVelocity = ball.GetVelocity();
-		float totalSpeed = MagnitudeVector2(opponent.GetVelocity()) + MagnitudeVector2(ballVelocity);
-		sf::Vector2f pdir = NormaliseVector2(opponent.GetSprite().getPosition() - ball.GetSprite().getPosition());
-		sf::Vector2f bdir = -pdir;
-		sf::Vector2f newVel = pdir * (totalSpeed / 4);
-
-		opponent.SetVelocity(sf::Vector2f((opponent.GetVelocity().x + newVel.x) / 2, (opponent.GetVelocity().y + newVel.y) / 2));
-		ballVelocity = bdir * (totalSpeed * 3 / 4);
-
-		if (MagnitudeVector2(ballVelocity) == 0)
-		{
-			ballVelocity = bdir / 5.0f;
-		}
-
-		ball.SetVelocity(ballVelocity);
-	}
+	//else if (opponent.GetSprite().getGlobalBounds().intersects(ball.GetSprite().getGlobalBounds()))
+	//{
+	//	sf::Vector2f ballVelocity = ball.GetVelocity();
+	//	float totalSpeed = MagnitudeVector2(opponent.GetVelocity()) + MagnitudeVector2(ballVelocity);
+	//	sf::Vector2f pdir = NormaliseVector2(opponent.GetSprite().getPosition() - ball.GetSprite().getPosition());
+	//	sf::Vector2f bdir = -pdir;
+	//	sf::Vector2f newVel = pdir * (totalSpeed / 4);
+	//
+	//	opponent.SetVelocity(sf::Vector2f((opponent.GetVelocity().x + newVel.x) / 2, (opponent.GetVelocity().y + newVel.y) / 2));
+	//	ballVelocity = bdir * (totalSpeed * 3 / 4);
+	//
+	//	if (MagnitudeVector2(ballVelocity) == 0)
+	//	{
+	//		ballVelocity = bdir / 5.0f;
+	//	}
+	//
+	//	ball.SetVelocity(ballVelocity);
+	//}
 
 	if (ball.GetSprite().getGlobalBounds().intersects(goal1.getGlobalBounds()))
 	{
@@ -876,6 +912,7 @@ void CheckCollisions()
 	}
 	
 }
+
 
 void Goal(int score1, int score2)
 {

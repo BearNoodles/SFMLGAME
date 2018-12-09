@@ -171,7 +171,7 @@ sf::Vector2f Player::PredictPosition(float time, float frameTime)
 	float vely = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
 	m_velocity = sf::Vector2f(velx, vely) * frameTime;
 
-	return sf::Vector2f(x, y);
+	//return sf::Vector2f(x, y);
 
 
 	x += velx * (time - msg0.timeSent) * frameTime;

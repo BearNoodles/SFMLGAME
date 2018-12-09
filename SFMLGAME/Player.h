@@ -47,7 +47,7 @@ private:
 	sf::Vector2f m_velocity;
 	sf::Vector2f m_scale = sf::Vector2f(0.03f, 0.03f);
 	sf::Vector2f m_dir;
-	float MAXSPEED = 100.0f;
+	float MAXSPEED = 10.0f;
 	float MAXSPEED2;
 	float m_acceleration;
 	float DRAG = 1.0005f;
