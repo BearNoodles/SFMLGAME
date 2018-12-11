@@ -801,6 +801,8 @@ bool WaitForPlayers()
 				//playerList.push_back(tempPlayer);
 
 				opponent.Init(texture, startPos, playerColours[playerCount], playerCount);
+				std::cout << "Player has joined, press space to begin" << std::endl;
+
 				break;
 			}
 			
