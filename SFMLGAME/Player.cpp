@@ -70,15 +70,6 @@ void Player::UpdateSelf(sf::Time time, sf::Time frameTime)
 
 void Player::UpdateOther(sf::Time time, sf::Time frameTime)
 {
-	//m_frameTime = frameTime;
-	//if (newmsg)
-	//{
-	//	//m_position = PredictPosition(time.asSeconds());
-	//}
-	////TODO predict and set opponent velocity
-	//PredictPosition(time.asSeconds());
-	//m_sprite.move(m_velocity * time.asSeconds() / 20.0f);
-	//m_position = m_sprite.getPosition();
 
 	m_sprite.setRotation(1.5f * 3.14159f - atan2f(m_dir.y, m_dir.x));
 
@@ -183,66 +174,11 @@ sf::Vector2f Player::PredictPosition(float time, float frameTime)
 	
 	m_dir.x = msg0.dirx;
 	m_dir.y = msg0.diry;
-	//return sf::Vector2f(x, y);
 	
 	
 	x += velx * (time - msg0.timeSent) * frameTime;
 	y += vely * (time - msg0.timeSent) * frameTime;
 
-	//m_velocity = (sf::Vector2f(x, y) + sf::Vector2f(velx, vely)) - m_position;
-
-	//Quadratic prediction
-	//float velx0 = (msg0.x - msg1.x) / (msg0.timeSent - msg1.timeSent);
-	//float vely0 = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
-	//float velx1 = (msg1.x - msg2.x) / (msg1.timeSent - msg2.timeSent);
-	//float vely1 = (msg1.y - msg2.y) / (msg1.timeSent - msg2.timeSent);
-	//
-	//float accx = (velx0 - velx1) / (msg0.timeSent - msg1.timeSent);
-	//float accy = (vely0 - vely1) / (msg0.timeSent - msg1.timeSent);
-	//
-	//m_velocity = sf::Vector2f(velx0, vely0) * frameTime;
-	//
-	//float dTime = time - msg0.timeSent;
-	//
-	//x += (velx0 * dTime) + 0.5f * (accx * (dTime * dTime));
-	//y += (vely0 * dTime) + 0.5f * (accy * (dTime * dTime));
-	//x *= frameTime;
-	//y *= frameTime;
-	
-
-	//Interpolated prediction
-	//Message newPrediction;
-	//newPrediction.x = x;
-	//newPrediction.y = y;
-	//newPrediction.timeSent = time;
-	//newPrediction.id = msg0.id;
-	//m_predictionHistory.push_back(newPrediction);
-	//
-	//while (m_predictionHistory.size() > m_reqMessages)
-	//{
-	//	m_predictionHistory.erase(m_predictionHistory.begin());
-	//}
-	//
-	//if (m_predictionHistory.size() == m_reqMessages)
-	//{
-	//	const Message& imsg0 = m_predictionHistory[m_reqMessages - 1];
-	//	const Message& imsg1 = m_predictionHistory[m_reqMessages - 2];
-	//	const Message& imsg2 = m_predictionHistory[m_reqMessages - 3];
-	//	float ix = imsg0.x;
-	//	float iy = imsg0.y;
-	//
-	//	float ivelx = (imsg0.x - imsg1.x) / (imsg0.timeSent - imsg1.timeSent);
-	//	float ively = (imsg0.y - imsg1.y) / (imsg0.timeSent - imsg1.timeSent);
-	//	ix += ivelx * (time - imsg0.timeSent) * frameTime;
-	//	iy += ively * (time - imsg0.timeSent) * frameTime;
-	//
-	//
-	//	m_velocity = sf::Vector2f(ivelx, ively) * frameTime;
-	//	x = (x - ix) / 2;
-	//	y = (y - iy) / 2;
-	//}
-
-	//return sf::Vector2f(x, y);
 	return sf::Vector2f(x, y);
 
 }

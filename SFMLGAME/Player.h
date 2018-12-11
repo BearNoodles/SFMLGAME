@@ -57,7 +57,6 @@ private:
 	float m_acceleration;
 	float DRAG = 1.0005f;
 
-	//sf::Time m_frameTime;
 
 	std::vector<Message> m_messages;
 	std::vector<Message> m_predictionHistory;

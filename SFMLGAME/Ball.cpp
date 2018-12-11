@@ -84,15 +84,6 @@ void Ball::UpdateHost(sf::Time time, sf::Time frameTime)
 
 void Ball::UpdateClient(sf::Time time, sf::Time frameTime)
 {
-	//m_frameTime = frameTime;
-	//if (newmsg)
-	//{
-	//	//m_position = PredictPosition(time.asSeconds());
-	//}
-	////TODO predict and set opponent velocity
-	//PredictPosition(time.asSeconds());
-	//m_sprite.move(m_velocity * time.asSeconds() / 20.0f);
-	//m_position = m_sprite.getPosition();
 
 	m_position = PredictPosition(time.asSeconds());
 	m_sprite.setPosition(m_position);

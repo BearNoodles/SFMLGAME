@@ -19,7 +19,7 @@
 #define FPS 60
 
 bool InitHost();
-void InitClient();
+bool InitClient();
 void Init();
 void HostOrClient();
 bool WaitForPlayers();
@@ -77,9 +77,6 @@ unsigned short hostPort = 54444;
 
 sf::IpAddress clientIP;
 unsigned short clientPort;
-
-std::list<sf::IpAddress> clientIPs;
-std::list<unsigned short> clientPorts;
 
 int main()
 {
@@ -148,16 +145,8 @@ int main()
 	goal2.setColor(sf::Color(255, 0, 0, 250));
 	goal2.setOrigin(sf::Vector2f(goalTexture.getSize().x / 2, goalTexture.getSize().y / 2));
 
-	//ball.setTexture(ballTexture);
-	//ball.setPosition(ballStartPos);
-	//ball.setScale(sf::Vector2f(0.2f, 0.2f));
-	//ball.setColor(sf::Color(255, 255, 255, 255));
-	//ball.setOrigin(sf::Vector2f(ballTexture.getSize().x / 2, ballTexture.getSize().y / 2));
 	ballID = 0;
 
-	//sf::CircleShape ball(100.f);
-	//ball.setTexture(&ballTexture,false);
-	//ball.setPosition(500, 400);
 
 
 	sf::Clock timerClock; // starts the clock
@@ -172,8 +161,6 @@ int main()
 
 	ball.Init(ballTexture, ballStartPos, ballColour, screenWidth, screenHeight, ballID);
 
-	//window.setPosition(sf::Vector2i(500, 50));
-	//window.setJoystickThreshold(100);
 	while (window.isOpen())
 	{
 		window.clear();
@@ -441,6 +428,7 @@ int main()
 				ball.AddMessage(messages.front());
 				messages.pop_front();
 			}
+			//id 100 means a goal was scored
 			else if (messages.front().id == 100 && myID != 1)
 			{
 				while (true)
@@ -469,6 +457,7 @@ int main()
 				Reset();
 				messages.pop_front();
 			}
+			//id 99 means client hit ball
 			else if (messages.front().id == 99 && myID != 1)
 			{
 				sf::Vector2f ballVelocity = ball.GetVelocity();
@@ -644,19 +633,13 @@ bool InitClient()
 	//myID = std::stoi(r);
 	playerCount = myID;
 
-	for (int i = 0; i < playerCount; i++)
-	{
-		sf::Vector2f startPos(playerCount * startPosX, startPosY);
-		//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
-		//playerList.push_back(tempPlayer);
-
-	}
-
 	sf::Vector2f startPos(playerCount * startPosX, startPosY);
+
 	myPlayer.Init(texture, startPos, playerColours[playerCount], playerCount);
 	startPos = sf::Vector2f((playerCount - 1) * startPosX, startPosY);
 	opponent.Init(texture, startPos, playerColours[playerCount - 1], playerCount - 1);
 
+	return true;
 }
 
 void Init()
@@ -722,7 +705,8 @@ void HostOrClient()
 		{
 			if (!InitClient())
 			{
-
+				std::cout << "Error connecting to host, try again" << std::endl;
+				continue;
 			}
 			break;
 		}
@@ -730,14 +714,14 @@ void HostOrClient()
 		{
 			hostIP = choice;
 
-			while (true)
+			std::cout << "Enter port number of host" << std::endl;
+			unsigned short portChoice;
+			std::cin >> portChoice;
+			hostPort = portChoice;
+			if (!InitClient())
 			{
-				std::cout << "Enter port number of host" << std::endl;
-				unsigned short portChoice;
-				std::cin >> portChoice;
-				hostPort = portChoice;
-				InitClient();
-				break;
+				std::cout << "Error connecting to host, try again" << std::endl;
+				continue;
 			}
 			break;
 		}
@@ -755,6 +739,7 @@ bool WaitForPlayers()
 			std::string s = "begin";
 			sf::Packet packet;
 			packet << s;
+
 			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
 			{
 				// error...
@@ -772,7 +757,6 @@ bool WaitForPlayers()
 		if (socket.receive(packet, senderIP, senderPort) != sf::Socket::Done)
 		{
 			// error...
-			//recieve failed send hello again
 			//std::cout << "no messages yet" << std::endl;
 			return false;
 		}
@@ -795,23 +779,31 @@ bool WaitForPlayers()
 
 			std::string s = std::to_string(playerCount + 1);
 			packet << s;
+			int counter = 0;
 			while (true)
 			{
+				if (counter > 10000)
+				{
+					std::cout << "Error, could not connect to client" << std::endl;
+					break;
+				}
 				if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
 				{
 					// error...
 					//recieve failed send hello again
 					std::cout << "playerCount send failed, rety" << std::endl;
+					counter++;
 					continue;
 				}
+				playerCount++;
+				sf::Vector2f startPos(startPosX * playerCount, startPosY);
+				//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
+				//playerList.push_back(tempPlayer);
+
+				opponent.Init(texture, startPos, playerColours[playerCount], playerCount);
 				break;
 			}
-			playerCount++;
-			sf::Vector2f startPos(startPosX * playerCount, startPosY);
-			//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
-			//playerList.push_back(tempPlayer);
-
-			opponent.Init(texture, startPos, playerColours[playerCount], playerCount);
+			
 		}
 	}
 
@@ -844,51 +836,12 @@ void CheckCollisions()
 	{
 		float totalSpeed = MagnitudeVector2(myPlayer.GetVelocity()) + MagnitudeVector2(opponent.GetVelocity());
 		sf::Vector2f dir1 = NormaliseVector2(myPlayer.GetSprite().getPosition() - opponent.GetSprite().getPosition());
-		//sf::Vector2f dir2 = NormaliseVector2(player2.getPosition()) - NormaliseVector2(player1.getPosition());
 		sf::Vector2f dir2 = -dir1;
 		myPlayer.SetVelocity(dir1 * (totalSpeed / 2));
-		//opponent.SetVelocity(dir2 * (totalSpeed / 2));
-
-		//vel2 = sf::Vector2f(0.0f, 1.0f);
 	}
 
 	if (myID != 1)
 	{
-		//if (myPlayer.GetSprite().getGlobalBounds().intersects(ball.GetSprite().getGlobalBounds()))
-		//{
-		//	
-		//	sf::Vector2f ballVelocity = ball.GetVelocity();
-		//	float totalSpeed = MagnitudeVector2(myPlayer.GetVelocity()) + MagnitudeVector2(ballVelocity);
-		//	sf::Vector2f pdir = NormaliseVector2(myPlayer.GetSprite().getPosition() - ball.GetSprite().getPosition());
-		//	sf::Vector2f bdir = -pdir;
-		//	sf::Vector2f newVel = pdir * (totalSpeed / 4);
-		//
-		//	myPlayer.SetVelocity(sf::Vector2f((myPlayer.GetVelocity().x + newVel.x) / 2, (myPlayer.GetVelocity().y + newVel.y) / 2));
-		//	ballVelocity = bdir * (totalSpeed * 3 / 4);
-		//	
-		//	if (MagnitudeVector2(ballVelocity) == 0)
-		//	{
-		//		ballVelocity = bdir / 5.0f;
-		//	}
-		//
-		//	//ball.SetVelocity(ballVelocity);
-		//
-		//	//Tell host you hit the ball
-		//	Message msg;
-		//	sf::Int8 id = 99;
-		//	float x = ballVelocity.x;
-		//	float y = ballVelocity.y;
-		//	float timeSent = currentTime.asSeconds();
-		//	sf::Packet packet;
-		//	packet << id << x << y << timeSent;
-		//
-		//	if (socket.send(packet, hostIP, hostPort) != sf::Socket::Done)
-		//	{
-		//		// error...
-		//		//send failed try it again
-		//		std::cout << "Send message failed" << std::endl;
-		//	}
-		//}
 		return;
 	}
 
