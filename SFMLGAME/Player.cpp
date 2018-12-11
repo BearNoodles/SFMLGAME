@@ -180,12 +180,12 @@ sf::Vector2f Player::PredictPosition(float time, float frameTime)
 	float velx = (msg0.x - msg1.x) / (msg0.timeSent - msg1.timeSent);
 	float vely = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
 	m_velocity = sf::Vector2f(velx, vely) * frameTime;
-
+	
 	m_dir.x = msg0.dirx;
 	m_dir.y = msg0.diry;
 	//return sf::Vector2f(x, y);
-
-
+	
+	
 	x += velx * (time - msg0.timeSent) * frameTime;
 	y += vely * (time - msg0.timeSent) * frameTime;
 
@@ -200,13 +200,15 @@ sf::Vector2f Player::PredictPosition(float time, float frameTime)
 	//float accx = (velx0 - velx1) / (msg0.timeSent - msg1.timeSent);
 	//float accy = (vely0 - vely1) / (msg0.timeSent - msg1.timeSent);
 	//
+	//m_velocity = sf::Vector2f(velx0, vely0) * frameTime;
+	//
 	//float dTime = time - msg0.timeSent;
 	//
 	//x += (velx0 * dTime) + 0.5f * (accx * (dTime * dTime));
 	//y += (vely0 * dTime) + 0.5f * (accy * (dTime * dTime));
-	//
-	//float velx = velx0;
-	//float vely = vely0;
+	//x *= frameTime;
+	//y *= frameTime;
+	
 
 	//Interpolated prediction
 	//Message newPrediction;

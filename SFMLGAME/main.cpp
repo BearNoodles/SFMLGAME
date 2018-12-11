@@ -231,6 +231,11 @@ int main()
 	msgReady = false;
 	while (window.isOpen())
 	{
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
+		{
+			Reset();
+		}
+
 		frameTime = frameClock.restart();
 
 		currentTime = timerClock.getElapsedTime();
