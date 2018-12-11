@@ -18,7 +18,7 @@
 #define MAXPLAYERS 8
 #define FPS 60
 
-void InitHost();
+bool InitHost();
 void InitClient();
 void Init();
 void HostOrClient();
@@ -77,6 +77,9 @@ unsigned short hostPort = 54444;
 
 sf::IpAddress clientIP;
 unsigned short clientPort;
+
+std::list<sf::IpAddress> clientIPs;
+std::list<unsigned short> clientPorts;
 
 int main()
 {
@@ -199,34 +202,16 @@ int main()
 		{
 			window.draw(opponent.GetSprite());
 		}
+
 		window.draw(myPlayer.GetSprite());
 		window.draw(goal1);
 		window.draw(goal2);
 		window.draw(ball.GetSprite());
 		window.draw(text);
 		window.display();
-
-		//for (auto player : playerList)
-		//{
-		//	std::cout << "x " << player.GetSprite().getPosition().x << " y " << player.GetSprite().getPosition().y << std::endl;
-		//	window.draw(player.GetSprite());
-		//}
 	}
 
-	/*for (auto player : playerList)
-	{
-	if (myID == player.GetID())
-	{
-	myPlayer = &player;
-	}
-	}*/
 	int currentPlayer = 0;
-	for (auto player : playerList)
-	{
-		currentPlayer++;
-		sf::Vector2f startPos(currentPlayer * startPosX, startPosY);
-		player.Init(texture, startPos, playerColours[currentPlayer], currentPlayer);
-	}
 
 	msgReady = false;
 	while (window.isOpen())
@@ -537,28 +522,12 @@ int main()
 		myPlayer.UpdateSelf(currentTime, frameTime);
 		opponent.UpdateOther(currentTime, frameTime);
 
-		//for (auto player : playerList)
-		//{
-		//	if (player.GetID() == myID)
-		//	{
-		//		player.UpdateSelf(currentTime, frameTime);
-		//	}
-		//	else
-		//	{
-		//		player.UpdateOther(currentTime, frameTime);
-		//	}
-		//}
 		msgReady = false;
 
 		OutOfBounds();
 
 
 		window.clear();
-		//for (auto player : playerList)
-		//{
-		//	std::cout << "x " << player.GetSprite().getPosition().x << " y " << player.GetSprite().getPosition().y << std::endl;
-		//	window.draw(player.GetSprite());
-		//}
 
 		window.draw(opponent.GetSprite());
 		window.draw(myPlayer.GetSprite());
@@ -588,25 +557,29 @@ float MagnitudeVector2(sf::Vector2f vector)
 	return sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
 
-void InitHost()
+bool InitHost()
 {
-	// bind the socket to a port
-	if (socket.bind(hostPort) != sf::Socket::Done)
-	{
-		// error...
-	}
+	
+		// bind the socket to a port
+		if (socket.bind(hostPort) != sf::Socket::Done)
+		{
+			return false;
+		}
+	
 
 	myID = 1;
 	playerCount = myID;
 	sf::Vector2f startPos(playerCount * startPosX, startPosY);
 
 	myPlayer.Init(texture, startPos, playerColours[playerCount], playerCount);
+	return true;
 	//Player tempPlayer(texture, startPos, playerColours[playerCount], playerCount);
 	//playerList.push_back(Player());
 }
 
-void InitClient()
+bool InitClient()
 {
+	int counter = 0;
 	// bind the socket to a port
 	if (socket.bind(sf::Socket::AnyPort) != sf::Socket::Done)
 	{
@@ -615,6 +588,11 @@ void InitClient()
 
 	while (true)
 	{
+		if (counter > 10000)
+		{
+			std::cout << "Could not connect to host" << std::endl;
+			return false;
+		}
 		std::string s = "hello";
 
 		sf::Packet packet;
@@ -625,14 +603,20 @@ void InitClient()
 			// error...
 			//send failed try it again
 			std::cout << "Send greeting failed, retrying" << std::endl;
+			counter++;
 			continue;
 		}
-
+		counter = 0;
 		packet.clear();
 		break;
 	}
 	while (true)
 	{
+		if (counter > 10000)
+		{
+			std::cout << "Could not connect to host" << std::endl;
+			return false;
+		}
 		std::string r;
 		sf::Packet packet;
 		if (socket.receive(packet, hostIP, hostPort) != sf::Socket::Done)
@@ -640,6 +624,7 @@ void InitClient()
 			// error...
 			//receive failed send hello again
 			std::cout << "Receive failed, retrying" << std::endl;
+			counter++;
 			continue;
 		}
 
@@ -688,29 +673,10 @@ void Reset()
 	opponent.SetVelocity(sf::Vector2f(0,0));
 	ball.SetVelocity(sf::Vector2f(0,0));
 
-	//player2.setPosition(player2StartPos);
-	//
-	//goal1.setPosition(goal1StartPos);
-	//goal2.setPosition(goal2StartPos);
-	//
-	//
-	//vel1 = sf::Vector2f(0, 0);
-	//vel2 = sf::Vector2f(0, 0);
-	//ballVelocity = sf::Vector2f(0, 0);
-	//dir = sf::Vector2f(0, 0);
-	//dir2 = sf::Vector2f(0, 0);
 }
 
 void OutOfBounds()
 {
-	//check who is out of bounds
-	//for (auto player : playerList)
-	//{
-	//	if (player.GetSprite.GetPosition().x > screenWidth)
-	//	{
-	//		player.GetSprite.SetPosition(0.0f, player.GetSprite.GetPosition().y);
-	//	}
-	//}
 
 	//only check if self is out of bounds
 	if (myPlayer.GetPosition().x > screenWidth)
@@ -745,12 +711,19 @@ void HostOrClient()
 
 		if (choice == "1")
 		{
-			InitHost();
+			if(!InitHost())
+			{
+				std::cout << "Error starting as host, try again" << std::endl;
+				continue;
+			}
 			break;
 		}
 		else if (choice == "2")
 		{
-			InitClient();
+			if (!InitClient())
+			{
+
+			}
 			break;
 		}
 		else
@@ -782,7 +755,6 @@ bool WaitForPlayers()
 			std::string s = "begin";
 			sf::Packet packet;
 			packet << s;
-
 			if (socket.send(packet, clientIP, clientPort) != sf::Socket::Done)
 			{
 				// error...
