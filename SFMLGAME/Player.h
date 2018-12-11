@@ -28,6 +28,11 @@ public:
 	sf::Vector2f GetVelocity();
 	void SetVelocity(sf::Vector2f velocity);
 
+	sf::Vector2f GetDir();
+	void SetDir(sf::Vector2f dir);
+
+
+
 	sf::Sprite GetSprite();
 
 	sf::Vector2f PredictPosition(float time, float frameTime);

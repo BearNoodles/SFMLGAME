@@ -80,6 +80,8 @@ void Player::UpdateOther(sf::Time time, sf::Time frameTime)
 	//m_sprite.move(m_velocity * time.asSeconds() / 20.0f);
 	//m_position = m_sprite.getPosition();
 
+	m_sprite.setRotation(1.5f * 3.14159f - atan2f(m_dir.y, m_dir.x));
+
 	m_position = PredictPosition(time.asSeconds(), frameTime.asSeconds());
 	m_sprite.setPosition(m_position);
 }
@@ -115,6 +117,14 @@ void Player::SetPosition(sf::Vector2f pos)
 {
 	m_position = pos;
 	m_sprite.setPosition(m_position);
+}
+sf::Vector2f Player::GetDir()
+{
+	return m_dir;
+}
+void Player::SetDir(sf::Vector2f dir)
+{
+	m_dir = dir;
 }
 sf::IpAddress Player::GetIP()
 {
@@ -171,6 +181,8 @@ sf::Vector2f Player::PredictPosition(float time, float frameTime)
 	float vely = (msg0.y - msg1.y) / (msg0.timeSent - msg1.timeSent);
 	m_velocity = sf::Vector2f(velx, vely) * frameTime;
 
+	m_dir.x = msg0.dirx;
+	m_dir.y = msg0.diry;
 	//return sf::Vector2f(x, y);
 
 
@@ -200,8 +212,6 @@ sf::Vector2f Player::PredictPosition(float time, float frameTime)
 	//Message newPrediction;
 	//newPrediction.x = x;
 	//newPrediction.y = y;
-	//newPrediction.velx = velx;
-	//newPrediction.vely = vely;
 	//newPrediction.timeSent = time;
 	//newPrediction.id = msg0.id;
 	//m_predictionHistory.push_back(newPrediction);
@@ -221,11 +231,11 @@ sf::Vector2f Player::PredictPosition(float time, float frameTime)
 	//
 	//	float ivelx = (imsg0.x - imsg1.x) / (imsg0.timeSent - imsg1.timeSent);
 	//	float ively = (imsg0.y - imsg1.y) / (imsg0.timeSent - imsg1.timeSent);
-	//	ix += ivelx * (time - imsg0.timeSent);
-	//	iy += ively * (time - imsg0.timeSent);
+	//	ix += ivelx * (time - imsg0.timeSent) * frameTime;
+	//	iy += ively * (time - imsg0.timeSent) * frameTime;
 	//
 	//
-	//	//m_velocity = sf::Vector2f(ivelx, ively);
+	//	m_velocity = sf::Vector2f(ivelx, ively) * frameTime;
 	//	x = (x - ix) / 2;
 	//	y = (y - iy) / 2;
 	//}
